@@ -1,4 +1,4 @@
-package domain.entity;
+package com.tournament.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;

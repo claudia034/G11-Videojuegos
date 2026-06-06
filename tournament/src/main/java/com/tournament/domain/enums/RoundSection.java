@@ -1,4 +1,4 @@
-package domain.enums;
+package com.tournament.domain.enums;
 
 public enum RoundSection {
     WINNERS,

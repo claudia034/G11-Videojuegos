@@ -1,4 +1,4 @@
-package domain.entity;
+package com.tournament.domain.entity;
 
 import domain.enums.RegistrationStatus;
 import jakarta.persistence.*;
