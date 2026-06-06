@@ -24,7 +24,7 @@ public class BracketService {
     private final RoundRepository        roundRepository;
     private final MatchRepository        matchRepository;
     private final RegistrationRepository registrationRepository;
-    private final TournamentRepository   tournamentRepository;  
+    private final TournamentRepository   tournamentRepository;
     private final FormatFactory          formatFactory;
 
     public BracketResponse generateBracket(Long tournamentId, GenerateBracketRequest req) {
