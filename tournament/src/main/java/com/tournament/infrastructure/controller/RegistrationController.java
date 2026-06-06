@@ -6,11 +6,12 @@ import com.tournament.application.service.RegistrationService;
 import com.tournament.infrastructure.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.*;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -32,11 +33,12 @@ public class RegistrationController {
     }
 
     @GetMapping("/tournaments/{tournamentId}/participants")
-    public ResponseEntity<ApiResponse<List<RegistrationResponse>>> getParticipants(
-            @PathVariable Long tournamentId) {
+    public ResponseEntity<ApiResponse<Page<RegistrationResponse>>> getParticipants(
+            @PathVariable Long tournamentId,
+            @PageableDefault(size = 20, sort = "registeredAt") Pageable pageable) {
 
         return ResponseEntity.ok(
-                ApiResponse.success(registrationService.getParticipants(tournamentId)));
+                ApiResponse.success(registrationService.getParticipants(tournamentId, pageable)));
     }
 
     @DeleteMapping("/registrations/{registrationId}")
