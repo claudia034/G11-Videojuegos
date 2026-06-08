@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: tournament
+  flyway:
+    enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
