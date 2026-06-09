@@ -63,6 +63,22 @@ public class Tournament extends BaseEntity {
     @Column(name = "max_participants", nullable = false)
     private Integer maxParticipants;
 
+    @NotNull
+    @Column(name = "is_team_based", nullable = false)
+    @Builder.Default
+    private Boolean isTeamBased = false;
+
+    @Min(0)
+    @Column(name = "min_elo")
+    private Integer minElo;
+
+    @Min(0)
+    @Column(name = "max_elo")
+    private Integer maxElo;
+
+    @Column(name = "organizer_id")
+    private Long organizerId;
+
     @Column(name = "registration_start_at")
     private LocalDateTime registrationStartAt;
 
