@@ -30,6 +30,16 @@ public record CreateTournamentRequest(
         @Min(2)
         Integer maxParticipants,
 
+        Boolean isTeamBased,
+
+        @Min(0)
+        Integer minElo,
+
+        @Min(0)
+        Integer maxElo,
+
+        Long organizerId,
+
         LocalDateTime registrationStartAt,
 
         LocalDateTime registrationEndAt,
