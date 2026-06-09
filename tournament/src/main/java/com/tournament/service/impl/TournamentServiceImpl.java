@@ -199,11 +199,20 @@ public class TournamentServiceImpl implements TournamentService {
             throw new IllegalArgumentException("registrationEndAt must be before or equal to startAt");
         }
 
+        validateEloRange(tournament);
         validateUniqueRoundNumbers(tournament.getRounds());
         validateUniquePrizePositions(tournament.getPrizes());
 
         for (TournamentRound round : tournament.getRounds()) {
             validateDateRange(round.getStartAt(), round.getEndAt(), "round startAt must be before or equal to endAt");
+        }
+    }
+
+    private void validateEloRange(Tournament tournament) {
+        if (tournament.getMinElo() != null
+                && tournament.getMaxElo() != null
+                && tournament.getMinElo() > tournament.getMaxElo()) {
+            throw new IllegalArgumentException("minElo must be less than or equal to maxElo");
         }
     }
 
