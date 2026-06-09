@@ -37,21 +37,25 @@ class TournamentApplicationTests {
     void createsAndReadsTournamentThroughLayers() throws Exception {
         String requestBody = """
                 {
-                  "name": "Copa G11",
-                  "description": "Torneo de videojuegos del grupo G11",
+                  "name": "G11 Cup",
+                  "description": "G11 gaming tournament",
                   "gameName": "Valorant",
                   "format": "SINGLE_ELIMINATION",
                   "maxParticipants": 16,
+                  "isTeamBased": true,
+                  "minElo": 1000,
+                  "maxElo": 2500,
+                  "organizerId": 42,
                   "rounds": [
                     {
                       "roundNumber": 1,
-                      "name": "Primera ronda"
+                      "name": "First round"
                     }
                   ],
                   "prizes": [
                     {
                       "position": 1,
-                      "name": "Primer lugar",
+                      "name": "First place",
                       "prizeType": "CASH",
                       "amount": 100.00,
                       "currency": "USD"
@@ -65,16 +69,24 @@ class TournamentApplicationTests {
                         .content(requestBody))
                 .andExpect(status().isCreated())
                 .andExpect(header().exists("Location"))
-                .andExpect(jsonPath("$.name").value("Copa G11"))
-                .andExpect(jsonPath("$.rounds[0].name").value("Primera ronda"))
-                .andExpect(jsonPath("$.prizes[0].name").value("Primer lugar"))
+                .andExpect(jsonPath("$.name").value("G11 Cup"))
+                .andExpect(jsonPath("$.isTeamBased").value(true))
+                .andExpect(jsonPath("$.minElo").value(1000))
+                .andExpect(jsonPath("$.maxElo").value(2500))
+                .andExpect(jsonPath("$.organizerId").value(42))
+                .andExpect(jsonPath("$.rounds[0].name").value("First round"))
+                .andExpect(jsonPath("$.prizes[0].name").value("First place"))
                 .andReturn();
 
         String location = result.getResponse().getHeader("Location");
 
         mockMvc.perform(get(location))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Copa G11"))
+                .andExpect(jsonPath("$.name").value("G11 Cup"))
+                .andExpect(jsonPath("$.isTeamBased").value(true))
+                .andExpect(jsonPath("$.minElo").value(1000))
+                .andExpect(jsonPath("$.maxElo").value(2500))
+                .andExpect(jsonPath("$.organizerId").value(42))
                 .andExpect(jsonPath("$.rounds[0].roundNumber").value(1))
                 .andExpect(jsonPath("$.prizes[0].position").value(1));
 
@@ -131,6 +143,10 @@ class TournamentApplicationTests {
                   "format": "ROUND_ROBIN",
                   "status": "REGISTRATION_OPEN",
                   "maxParticipants": 4,
+                  "isTeamBased": true,
+                  "minElo": 1200,
+                  "maxElo": 1800,
+                  "organizerId": 77,
                   "prizes": [
                     {
                       "position": 1,
@@ -149,6 +165,10 @@ class TournamentApplicationTests {
                 .andExpect(jsonPath("$.gameName").value("Rocket League"))
                 .andExpect(jsonPath("$.format").value("ROUND_ROBIN"))
                 .andExpect(jsonPath("$.status").value("REGISTRATION_OPEN"))
+                .andExpect(jsonPath("$.isTeamBased").value(true))
+                .andExpect(jsonPath("$.minElo").value(1200))
+                .andExpect(jsonPath("$.maxElo").value(1800))
+                .andExpect(jsonPath("$.organizerId").value(77))
                 .andExpect(jsonPath("$.rounds.length()").value(3))
                 .andExpect(jsonPath("$.prizes[0].name").value("Champion"));
     }
@@ -297,6 +317,26 @@ class TournamentApplicationTests {
                         .content(requestBody))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.messages[0]").value("registrationStartAt must be before or equal to registrationEndAt"));
+    }
+
+    @Test
+    void rejectsInvalidTournamentEloRange() throws Exception {
+        String requestBody = """
+                {
+                  "name": "Invalid Elo Cup",
+                  "gameName": "Valorant",
+                  "format": "SINGLE_ELIMINATION",
+                  "maxParticipants": 8,
+                  "minElo": 2500,
+                  "maxElo": 1000
+                }
+                """;
+
+        mockMvc.perform(post("/tournaments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.messages[0]").value("minElo must be less than or equal to maxElo"));
     }
 
     @Test
