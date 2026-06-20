@@ -1,6 +1,6 @@
-package domain.repository;
+package com.tournament.domain.repository;
 
-import domain.entity.Round;
+import com.tournament.domain.entity.Round;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

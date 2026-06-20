@@ -6,11 +6,8 @@ import com.tournament.application.service.RegistrationService;
 import com.tournament.infrastructure.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.*;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -33,19 +30,18 @@ public class RegistrationController {
     }
 
     @GetMapping("/tournaments/{tournamentId}/participants")
-    public ResponseEntity<ApiResponse<Page<RegistrationResponse>>> getParticipants(
-            @PathVariable Long tournamentId,
-            @PageableDefault(size = 20, sort = "registeredAt") Pageable pageable) {
+    public ResponseEntity<ApiResponse<java.util.List<RegistrationResponse>>> getParticipants(
+            @PathVariable Long tournamentId) {
 
         return ResponseEntity.ok(
-                ApiResponse.success(registrationService.getParticipants(tournamentId, pageable)));
+                ApiResponse.success(registrationService.getParticipants(tournamentId)));
     }
 
     @DeleteMapping("/registrations/{registrationId}")
     @PreAuthorize("hasAnyRole('PLAYER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<ApiResponse<RegistrationResponse>> withdraw(
             @PathVariable Long registrationId,
-            @AuthenticationPrincipal Long userId) {
+            @RequestParam Long userId) {
 
         RegistrationResponse response = registrationService.withdraw(registrationId, userId);
         return ResponseEntity.ok(

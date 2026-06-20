@@ -1,6 +1,6 @@
-package domain.repository;
+package com.tournament.domain.repository;
 
-import domain.entity.Match;
+import com.tournament.domain.entity.Match;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

@@ -1,6 +1,6 @@
 package com.tournament.domain.entity;
 
-import domain.enums.RegistrationStatus;
+import com.tournament.domain.enums.RegistrationStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
