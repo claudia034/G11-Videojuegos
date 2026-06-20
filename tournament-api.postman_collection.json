@@ -1,0 +1,430 @@
+{
+  "info": {
+    "_postman_id": "923eab5f-24ec-4605-b98e-d0fd9b4c3ced",
+    "name": "G11 - Tournament API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "49411344",
+    "_collection_link": "https://go.postman.co/collection/49411344-923eab5f-24ec-4605-b98e-d0fd9b4c3ced?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Inscripciones",
+      "item": [
+        {
+          "name": "Inscribir jugador 1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tournaments/{{tournament_id}}/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tournaments",
+                "{{tournament_id}}",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Inscribir jugador 2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tournaments/{{tournament_id}}/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tournaments",
+                "{{tournament_id}}",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Ver participantes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tournaments/{{tournament_id}}/participants",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tournaments",
+                "{{tournament_id}}",
+                "participants"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Retirar inscripción",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "?userId=1",
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Brackets",
+      "item": [
+        {
+          "name": "Generar bracket (aleatorio)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"generationType\": \"RANDOM\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tournaments/{{tournament_id}}/brackets/generate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tournaments",
+                "{{tournament_id}}",
+                "brackets",
+                "generate"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generar bracket (por ranking ELO)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"generationType\": \"BY_RANKING\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tournaments/{{tournament_id}}/brackets/generate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tournaments",
+                "{{tournament_id}}",
+                "brackets",
+                "generate"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Ver bracket del torneo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tournaments/{{tournament_id}}/brackets",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tournaments",
+                "{{tournament_id}}",
+                "brackets"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Programar fecha de ronda",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scheduledStart\": \"2026-07-01T18:00:00\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/rounds/{{round_id}}/schedule",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rounds",
+                "{{round_id}}",
+                "schedule"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Partidos",
+      "item": [
+        {
+          "name": "Ver detalle de partido",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/matches/{{match_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "matches",
+                "{{match_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "1. Iniciar partido",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/matches/1/start?userId=1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "v1",
+                "matches",
+                "1",
+                "start"
+              ],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2. Reportar resultado (jugador 1 gana)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"winnerId\": 1,\n  \"score1\": 2,\n  \"score2\": 0,\n  \"evidenceUrl\": \"https://imgur.com/captura.png\",\n  \"notes\": \"Partida limpia\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/v1/matches/1/result?userId=1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "v1",
+                "matches",
+                "1",
+                "result"
+              ],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3a. Confirmar resultado (jugador 2 acepta)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/matches/1/confirm?userId=2",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "v1",
+                "matches",
+                "1",
+                "confirm"
+              ],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "2"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3b️. Disputar resultado (jugador 2 no está de acuerdo)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/api/v1/matches/1/dispute?userId=2&reason=El score es incorrecto",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "v1",
+                "matches",
+                "1",
+                "dispute"
+              ],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "2"
+                },
+                {
+                  "key": "reason",
+                  "value": "El score es incorrecto"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4. Admin resuelve disputa",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"winnerId\": 1,\n  \"adminNotes\": \"Se revisó la evidencia. Gana jugador 1.\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/api/v1/disputes/1/resolve?adminUserId=99",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8081",
+              "path": [
+                "api",
+                "v1",
+                "disputes",
+                "1",
+                "resolve"
+              ],
+              "query": [
+                {
+                  "key": "adminUserId",
+                  "value": "99"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8081/api/v1"
+    },
+    {
+      "key": "tournament_id",
+      "value": "1"
+    },
+    {
+      "key": "match_id",
+      "value": "1"
+    },
+    {
+      "key": "registration_id",
+      "value": "1"
+    },
+    {
+      "key": "round_id",
+      "value": "1"
+    }
+  ]
+}

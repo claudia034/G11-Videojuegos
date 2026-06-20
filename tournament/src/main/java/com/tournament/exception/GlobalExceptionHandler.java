@@ -40,11 +40,31 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(403, ex.getMessage()));
     }
 
+    @ExceptionHandler(UnauthorizedResultException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUnauthorized(UnauthorizedResultException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error(403, ex.getMessage()));
+    }
+
+    @ExceptionHandler(org.springframework.security.authorization.AuthorizationDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAuthorizationDenied(
+            org.springframework.security.authorization.AuthorizationDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error(403, "Acceso denegado"));
+    }
+
+    @ExceptionHandler(InvalidMatchStateException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInvalidMatchState(InvalidMatchStateException ex) {
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT)
+                .body(ApiResponse.error(409, ex.getMessage()));
+    }
+
     @ExceptionHandler({
             RegistrationNotFoundException.class,
             BracketNotFoundException.class,
             RoundNotFoundException.class,
-            TournamentNotFoundException.class  // Persona 1 define esta excepción
+            TournamentNotFoundException.class,
+            MatchNotFoundException.class
     })
     public ResponseEntity<ApiResponse<Void>> handleNotFound(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)

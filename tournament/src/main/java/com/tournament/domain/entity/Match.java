@@ -42,6 +42,10 @@ public class Match extends BaseEntity {
     @Builder.Default
     private Integer bestOf = 1;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "winner_id")
+    private Registration winner;
+
     @Column(name = "scheduled_at")
     private LocalDateTime scheduledAt;
 

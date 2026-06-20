@@ -1,5 +1,6 @@
 package com.tournament.domain.entity;
 
+import com.tournament.domain.enums.GenerationType;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;

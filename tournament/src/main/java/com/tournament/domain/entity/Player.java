@@ -15,5 +15,6 @@ public class Player extends BaseEntity {
     private Long userId;
 
     @Column(name = "elo_rating", nullable = false)
+    @Builder.Default
     private int eloRating = 1000;
 }
