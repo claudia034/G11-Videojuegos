@@ -3,12 +3,14 @@ package com.tournament.application.service;
 import com.tournament.application.dto.request.ResolveDisputeRequest;
 import com.tournament.application.dto.request.SubmitResultRequest;
 import com.tournament.application.dto.response.MatchDetailResponse;
+import com.tournament.application.event.MatchCompletedEvent;
 import com.tournament.domain.entity.*;
 import com.tournament.domain.enums.MatchStatus;
 import com.tournament.domain.enums.RoundStatus;
 import com.tournament.domain.repository.*;
 import com.tournament.exception.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,7 @@ public class MatchService {
     private final RegistrationRepository registrationRepository;
     private final RoundRepository        roundRepository;
     private final BracketRepository      bracketRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public MatchDetailResponse getMatch(Long matchId) {
@@ -149,6 +152,7 @@ public class MatchService {
         matchRepository.save(match);
 
         advanceBracket(match, winner);
+        eventPublisher.publishEvent(new MatchCompletedEvent(this, match.getId()));
 
         return MatchDetailResponse.from(match, result);
     }
@@ -174,6 +178,7 @@ public class MatchService {
         matchRepository.save(match);
 
         advanceBracket(match, match.getWinner());
+        eventPublisher.publishEvent(new MatchCompletedEvent(this, match.getId()));
 
         return MatchDetailResponse.from(match, result);
     }
