@@ -3,12 +3,14 @@ package com.tournament.application.service;
 import com.tournament.application.dto.request.GenerateBracketRequest;
 import com.tournament.application.dto.request.ScheduleRoundRequest;
 import com.tournament.application.dto.response.*;
+import com.tournament.application.event.TournamentStartedEvent;
 import com.tournament.application.format.*;
 import com.tournament.domain.entity.*;
 import com.tournament.domain.enums.*;
 import com.tournament.domain.repository.*;
 import com.tournament.exception.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
@@ -26,6 +28,7 @@ public class BracketService {
     private final RegistrationRepository registrationRepository;
     private final TournamentRepository   tournamentRepository;
     private final FormatFactory          formatFactory;
+    private final ApplicationEventPublisher eventPublisher;
 
     public BracketResponse generateBracket(Long tournamentId, GenerateBracketRequest req) {
 
@@ -67,6 +70,8 @@ public class BracketService {
 
         tournament.setStatus(TournamentStatus.IN_PROGRESS);
         tournamentRepository.save(tournament);
+
+        eventPublisher.publishEvent(new TournamentStartedEvent(this, tournamentId));
 
         return buildResponse(bracket, result.rounds(), savedMatches);
     }

@@ -11,6 +11,9 @@ import com.tournament.domain.repository.MatchRepository;
 import com.tournament.domain.repository.MatchResultRepository;
 import com.tournament.domain.repository.PlayerRepository;
 import com.tournament.domain.repository.PlayerStatsRepository;
+import com.tournament.domain.repository.RegistrationRepository;
+import com.tournament.domain.enums.RegistrationStatus;
+import com.tournament.application.event.TournamentStartedEvent;
 import com.tournament.exception.PlayerNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +38,7 @@ public class PlayerStatisticsService {
     private final MatchRepository matchRepository;
     private final MatchResultRepository matchResultRepository;
     private final EloCalculatorService eloCalculatorService;
+    private final RegistrationRepository registrationRepository;
 
     @EventListener
     public void handleMatchCompleted(MatchCompletedEvent event) {
@@ -77,12 +81,8 @@ public class PlayerStatisticsService {
         if (won) stats.incrementWins();
         else stats.incrementLosses();
 
-        // TODO encontrar forma de manejar el incremento de torneos jugados
-        // Idealmente cuando un torneo empieza (in progress)
-        // stats.incrementTournamentsPlayed();
-
         playerStatsRepository.save(stats);
-        log.info("Updated stats for player {}: new ELO {}, won: {}", player.getUsername(), newElo, won);
+        log.info("Actualizando stats para jugador {}: nuevo ELO {}, ganó: {}", player.getUsername(), newElo, won);
     }
 
     private List<Player> extractPlayers(Registration registration) {
@@ -92,6 +92,27 @@ public class PlayerStatisticsService {
         return registration.getTeam().getMembers().stream()
                 .map(TeamMember::getPlayer)
                 .collect(Collectors.toList());
+    }
+
+    @EventListener
+    public void handleTournamentStarted(TournamentStartedEvent event) {
+        log.info("Procesando inicio del torneo: {}", event.getTournamentId());
+        
+        List<Registration> registrations = registrationRepository
+                .findByTournamentIdAndStatus(event.getTournamentId(), RegistrationStatus.CONFIRMED);
+        
+        for (Registration reg : registrations) {
+            List<Player> players = extractPlayers(reg);
+
+            for (Player player : players) {
+                PlayerStats stats = playerStatsRepository.findByPlayerId(player.getId())
+                        .orElseGet(() -> PlayerStats.builder().player(player).build());
+                
+                stats.incrementTournamentsPlayed();
+                playerStatsRepository.save(stats);
+                log.info("Se incrementaron los torneos jugados para el jugador: {}", player.getUsername());
+            }
+        }
     }
 
     @Transactional(readOnly = true)
