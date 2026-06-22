@@ -1,15 +1,19 @@
 package com.tournament.application.service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.tournament.application.dto.request.RegisterRequest;
 import com.tournament.application.dto.response.RegistrationResponse;
 import com.tournament.domain.entity.*;
 import com.tournament.domain.enums.*;
 import com.tournament.domain.repository.*;
 import com.tournament.exception.*;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -71,14 +75,13 @@ public class RegistrationService {
     }
 
     @Transactional(readOnly = true)
-    public List<RegistrationResponse> getParticipants(Long tournamentId) {
+    public Page<RegistrationResponse> getParticipants(Long tournamentId, Pageable pageable) {
         if (!tournamentRepository.existsById(tournamentId)) {
             throw new TournamentNotFoundException(tournamentId);
         }
-        return registrationRepository.findByTournamentId(tournamentId)
-                .stream()
-                .map(RegistrationResponse::from)
-                .toList();
+
+        return registrationRepository.findByTournamentId(tournamentId, pageable)
+                .map(RegistrationResponse::from);
     }
 
     private Registration buildUserRegistration(Tournament tournament, Long userId) {
