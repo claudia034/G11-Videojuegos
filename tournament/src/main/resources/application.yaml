@@ -4,6 +4,7 @@ server:
 spring:
   application:
     name: tournament
+<<<<<<< HEAD
   datasource:
     url: jdbc:postgresql://localhost:5432/tournament
     username: postgres
@@ -12,3 +13,14 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+=======
+<<<<<<< HEAD
+=======
+  flyway:
+    enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+>>>>>>> origin/feature/crear-entidades-torneo
+>>>>>>> develop
