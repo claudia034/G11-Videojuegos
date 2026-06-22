@@ -44,11 +44,30 @@ public class GlobalExceptionHandler {
             RegistrationNotFoundException.class,
             BracketNotFoundException.class,
             RoundNotFoundException.class,
-            TournamentNotFoundException.class  // Persona 1 define esta excepción
+            TournamentNotFoundException.class,
+            MatchNotFoundException.class
     })
     public ResponseEntity<ApiResponse<Void>> handleNotFound(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.error(404, ex.getMessage()));
+    }
+
+    @ExceptionHandler(UnauthorizedResultException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUnauthorizedResult(UnauthorizedResultException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error(403, ex.getMessage()));
+    }
+
+    @ExceptionHandler(org.springframework.security.authorization.AuthorizationDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAuthorizationDenied(Exception ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error(403, "No tienes permisos para realizar esta acción"));
+    }
+
+    @ExceptionHandler(InvalidMatchStateException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInvalidMatchState(InvalidMatchStateException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(409, ex.getMessage()));
     }
 
     @ExceptionHandler({

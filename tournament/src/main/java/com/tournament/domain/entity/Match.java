@@ -1,6 +1,6 @@
 package com.tournament.domain.entity;
 
-import domain.enums.MatchStatus;
+import com.tournament.domain.enums.MatchStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -44,6 +44,10 @@ public class Match extends BaseEntity {
 
     @Column(name = "scheduled_at")
     private LocalDateTime scheduledAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "winner_registration_id")
+    private Registration winner;
 
     public boolean isBye() {
         return registration1 == null || registration2 == null;
