@@ -2,12 +2,15 @@ package com.tournament.exception;
 
 import com.tournament.infrastructure.response.ApiResponse;
 import org.springframework.http.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -24,8 +27,10 @@ public class GlobalExceptionHandler {
         ex.getBindingResult().getGlobalErrors().forEach(ge ->
                 errors.put("_global", ge.getDefaultMessage()));
 
+        log.warn("Error de validación en la petición: {}", errors);
+
         return ResponseEntity.badRequest()
-                .body(ApiResponse.error(400, "Error de validación", errors));
+                .body(ApiResponse.error(400, "Error de validación en los datos enviados", errors));
     }
 
     @ExceptionHandler(InvalidRegistrationTypeException.class)
@@ -44,7 +49,8 @@ public class GlobalExceptionHandler {
             RegistrationNotFoundException.class,
             BracketNotFoundException.class,
             RoundNotFoundException.class,
-            TournamentNotFoundException.class  // Persona 1 define esta excepción
+            TournamentNotFoundException.class,
+            ResourceNotFoundException.class
     })
     public ResponseEntity<ApiResponse<Void>> handleNotFound(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -75,6 +81,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGeneral(Exception ex) {
+        log.error("Error interno no controlado (500): {}", ex.getMessage(),ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error(500, "Error interno del servidor"));
     }
