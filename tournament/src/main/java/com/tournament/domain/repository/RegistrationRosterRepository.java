@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface RegistrationRosterRepository extends JpaRepository<RegistrationRoster, Long> {
     List<RegistrationRoster> findByRegistration(Long registrationId);
+
 }

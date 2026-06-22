@@ -1,19 +1,23 @@
 package com.tournament.application.service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.tournament.application.dto.request.RegisterRequest;
 import com.tournament.application.dto.response.RegistrationResponse;
 import com.tournament.domain.entity.*;
 import com.tournament.domain.enums.*;
 import com.tournament.domain.repository.*;
 import com.tournament.exception.*;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class RegistrationService {
 
     private final RegistrationRepository registrationRepository;
@@ -21,57 +25,69 @@ public class RegistrationService {
     private final PlayerRepository       playerRepository;
     private final TeamRepository         teamRepository;
 
+    @Transactional
     public RegistrationResponse register(Long tournamentId, RegisterRequest request) {
-
         validateExclusiveParticipant(request);
 
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new TournamentNotFoundException(tournamentId));
 
-        if (tournament.getStatus() != TournamentStatus.PUBLISHED) {
+        if (tournament.getStatus() != TournamentStatus.REGISTRATION_OPEN) {
             throw new TournamentNotPublishedException(tournamentId, tournament.getStatus());
         }
 
-        int current = registrationRepository
+        int currentParticipants = registrationRepository
                 .countByTournamentIdAndStatusNot(tournamentId, RegistrationStatus.WITHDRAWN);
-        if (current >= tournament.getMaxParticipants()) {
+
+        if (currentParticipants >= tournament.getMaxParticipants()) {
             throw new TournamentFullException(tournamentId, tournament.getMaxParticipants());
         }
 
-        Registration reg = (request.getPlayerId() != null)
+        Registration registration = (request.getPlayerId() != null)
                 ? buildPlayerRegistration(tournament, request.getPlayerId())
                 : buildTeamRegistration(tournament, request.getTeamId());
 
-        return RegistrationResponse.from(registrationRepository.save(reg));
+        Registration saved = registrationRepository.save(registration);
+        log.info("Nueva inscripción confirmada: Torneo ID {}, Participante: {}", tournamentId, saved.getParticipantName());
+
+        return RegistrationResponse.from(saved);
     }
 
+    @Transactional
     public RegistrationResponse withdraw(Long registrationId, Long requestingUserId) {
-
         Registration reg = registrationRepository.findById(registrationId)
                 .orElseThrow(() -> new RegistrationNotFoundException(registrationId));
 
-        if (reg.getTournament().getStatus() != TournamentStatus.PUBLISHED) {
+        if (reg.getTournament().getStatus() != TournamentStatus.REGISTRATION_OPEN) {
             throw new RegistrationWithdrawNotAllowedException(
-                    "No se puede retirar una inscripción de un torneo en curso o finalizado");
+                    "No se puede retirar una inscripción si la fase de registro no está abierta");
         }
 
         validateOwnership(reg, requestingUserId);
 
         reg.setStatus(RegistrationStatus.WITHDRAWN);
+        log.info("Inscripción retirada: Reg ID {}, Torneo ID {}, Solicitado por User ID {}",
+                registrationId, reg.getTournament().getId(), requestingUserId);
+
         return RegistrationResponse.from(registrationRepository.save(reg));
     }
 
     @Transactional(readOnly = true)
-    public List<RegistrationResponse> getParticipants(Long tournamentId) {
+    public Page<RegistrationResponse> getParticipants(Long tournamentId, Pageable pageable) {
         if (!tournamentRepository.existsById(tournamentId)) {
             throw new TournamentNotFoundException(tournamentId);
         }
-        return registrationRepository.findByTournamentId(tournamentId)
-                .stream().map(RegistrationResponse::from).toList();
+
+        return registrationRepository.findByTournamentId(tournamentId, pageable)
+                .map(RegistrationResponse::from);
     }
 
-
     private Registration buildPlayerRegistration(Tournament tournament, Long playerId) {
+        if (tournament.isTeamBased()) {
+            throw new InvalidRegistrationTypeException(
+                    "Este torneo es exclusivo por equipos; proporcione un teamId en lugar de un playerId");
+        }
+
         Player player = playerRepository.findById(playerId)
                 .orElseThrow(() -> new PlayerNotFoundException(playerId));
 
@@ -79,11 +95,13 @@ public class RegistrationService {
             throw new AlreadyRegisteredException(player.getUsername(), tournament.getId());
         }
 
-        validateEloRange(player.getEloRating(), tournament);
+        int elo = player.getEloRating();
+        validateEloRange(elo, tournament);
 
         return Registration.builder()
-                .tournament(tournament).player(player)
-                .eloAtRegistration(player.getEloRating())
+                .tournament(tournament)
+                .player(player)
+                .eloAtRegistration(elo)
                 .status(RegistrationStatus.CONFIRMED)
                 .build();
     }
@@ -91,7 +109,7 @@ public class RegistrationService {
     private Registration buildTeamRegistration(Tournament tournament, Long teamId) {
         if (!tournament.isTeamBased()) {
             throw new InvalidRegistrationTypeException(
-                    "Este torneo es individual; use playerId en lugar de teamId");
+                    "Este torneo es individual; proporcione un playerId en lugar de un teamId");
         }
 
         Team team = teamRepository.findById(teamId)
@@ -108,7 +126,8 @@ public class RegistrationService {
         validateEloRange(avgElo, tournament);
 
         return Registration.builder()
-                .tournament(tournament).team(team)
+                .tournament(tournament)
+                .team(team)
                 .eloAtRegistration(avgElo)
                 .status(RegistrationStatus.CONFIRMED)
                 .build();
@@ -117,6 +136,7 @@ public class RegistrationService {
     private void validateEloRange(int elo, Tournament t) {
         boolean tooLow  = t.getMinElo() != null && elo < t.getMinElo();
         boolean tooHigh = t.getMaxElo() != null && elo > t.getMaxElo();
+
         if (tooLow || tooHigh) {
             int min = t.getMinElo() != null ? t.getMinElo() : 0;
             int max = t.getMaxElo() != null ? t.getMaxElo() : Integer.MAX_VALUE;
@@ -125,21 +145,23 @@ public class RegistrationService {
     }
 
     private void validateExclusiveParticipant(RegisterRequest req) {
-        boolean hp = req.getPlayerId() != null;
-        boolean ht = req.getTeamId()   != null;
-        if (hp == ht) {
+        boolean hasPlayer = req.getPlayerId() != null;
+        boolean hasTeam = req.getTeamId() != null;
+
+        if (hasPlayer == hasTeam) {
             throw new InvalidRegistrationTypeException(
-                    "Especifique exactamente uno: playerId o teamId");
+                    "Solicitud ambigua: Especifique exactamente uno (playerId o teamId) según el formato del torneo");
         }
     }
 
-    private void validateOwnership(Registration reg, Long userId) {
-        Long ownerId = reg.isPlayerRegistration()
+    private void validateOwnership(Registration reg, Long requestingUserId) {
+        Long ownerUserId = reg.isPlayerRegistration()
                 ? reg.getPlayer().getUserId()
                 : reg.getTeam().getCaptain().getUserId();
-        if (!ownerId.equals(userId)) {
+
+        if (!ownerUserId.equals(requestingUserId)) {
             throw new ForbiddenOperationException(
-                    "No tienes permiso para modificar esta inscripción");
+                    "Operación denegada: No tienes permiso para modificar o retirar esta inscripción");
         }
     }
 }

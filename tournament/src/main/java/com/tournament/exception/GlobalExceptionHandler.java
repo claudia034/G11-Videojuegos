@@ -2,15 +2,19 @@ package com.tournament.exception;
 
 import com.tournament.infrastructure.response.ApiResponse;
 import org.springframework.http.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // Errores de validación
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Map<String, String>>> handleValidation(
             MethodArgumentNotValidException ex) {
@@ -24,26 +28,41 @@ public class GlobalExceptionHandler {
         ex.getBindingResult().getGlobalErrors().forEach(ge ->
                 errors.put("_global", ge.getDefaultMessage()));
 
+        log.warn("Error de validación en la petición: {}", errors);
+
         return ResponseEntity.badRequest()
-                .body(ApiResponse.error(400, "Error de validación", errors));
+                .body(ApiResponse.error(400, "Error de validación en los datos enviados", errors));
     }
 
-    @ExceptionHandler(InvalidRegistrationTypeException.class)
+    // Errorres 400 Bad request
+    @ExceptionHandler({
+            InvalidRegistrationTypeException.class,
+            IllegalArgumentException.class})
     public ResponseEntity<ApiResponse<Void>> handleInvalidType(InvalidRegistrationTypeException ex) {
+        log.warn("Petición incorrecta (400): {}", ex.getMessage());
         return ResponseEntity.badRequest()
                 .body(ApiResponse.error(400, ex.getMessage()));
     }
 
-    @ExceptionHandler(ForbiddenOperationException.class)
+    // Errores 403 Forbidden
+    @ExceptionHandler({
+            ForbiddenOperationException.class,
+            UnauthorizedResultException.class,
+            org.springframework.security.authorization.AuthorizationDeniedException.class
+    })
     public ResponseEntity<ApiResponse<Void>> handleForbidden(ForbiddenOperationException ex) {
+        log.warn("Petición incorrecta (400): {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ApiResponse.error(403, ex.getMessage()));
     }
 
+    // Errores 404 Not Found
     @ExceptionHandler({
             RegistrationNotFoundException.class,
             BracketNotFoundException.class,
             RoundNotFoundException.class,
+            TournamentNotFoundException.class,
+            ResourceNotFoundException.class,
             TournamentNotFoundException.class,
             MatchNotFoundException.class
     })
@@ -52,37 +71,22 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(404, ex.getMessage()));
     }
 
-    @ExceptionHandler(UnauthorizedResultException.class)
-    public ResponseEntity<ApiResponse<Void>> handleUnauthorizedResult(UnauthorizedResultException ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error(403, ex.getMessage()));
-    }
-
-    @ExceptionHandler(org.springframework.security.authorization.AuthorizationDeniedException.class)
-    public ResponseEntity<ApiResponse<Void>> handleAuthorizationDenied(Exception ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error(403, "No tienes permisos para realizar esta acción"));
-    }
-
-    @ExceptionHandler(InvalidMatchStateException.class)
-    public ResponseEntity<ApiResponse<Void>> handleInvalidMatchState(InvalidMatchStateException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.error(409, ex.getMessage()));
-    }
-
+    // Errores 409 Conflict
     @ExceptionHandler({
             TournamentFullException.class,
             AlreadyRegisteredException.class,
             TournamentNotPublishedException.class,
             BracketAlreadyGeneratedException.class,
             RegistrationWithdrawNotAllowedException.class,
-            RoundAlreadyCompletedException.class
+            RoundAlreadyCompletedException.class,
+            InvalidMatchStateException.class
     })
     public ResponseEntity<ApiResponse<Void>> handleConflict(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ApiResponse.error(409, ex.getMessage()));
     }
 
+    // Error 422 Unprocessable entity
     @ExceptionHandler({
             EloRequirementNotMetException.class,
             InsufficientParticipantsException.class
@@ -92,8 +96,10 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(422, ex.getMessage()));
     }
 
+    // Error 500 Internal Server Error
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGeneral(Exception ex) {
+        log.error("Error interno no controlado (500): {}", ex.getMessage(),ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error(500, "Error interno del servidor"));
     }

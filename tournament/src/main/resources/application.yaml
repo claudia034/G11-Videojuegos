@@ -1,18 +1,42 @@
+server:
+  port: 8081
+
 spring:
   application:
     name: tournament
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> develop
   datasource:
     url: jdbc:postgresql://localhost:5432/tournament
     username: postgres
     password: 12345678
+<<<<<<< HEAD
     driver-class-name: org.postgresql.Driver
+=======
+>>>>>>> develop
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
+<<<<<<< HEAD
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
 server:
   port: 8081
+=======
+=======
+<<<<<<< HEAD
+=======
+  flyway:
+    enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+>>>>>>> origin/feature/crear-entidades-torneo
+>>>>>>> develop
+>>>>>>> develop

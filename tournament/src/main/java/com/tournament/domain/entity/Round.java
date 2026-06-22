@@ -1,7 +1,7 @@
 package com.tournament.domain.entity;
 
-import domain.enums.RoundSection;
-import domain.enums.RoundStatus;
+import com.tournament.domain.enums.RoundSection;
+import com.tournament.domain.enums.RoundStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
