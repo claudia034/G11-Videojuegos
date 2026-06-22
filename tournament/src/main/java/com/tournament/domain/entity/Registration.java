@@ -1,19 +1,24 @@
 package com.tournament.domain.entity;
 
-import domain.enums.RegistrationStatus;
+import com.tournament.domain.enums.RegistrationStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "registrations", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"tournament_id", "player_id"}),
+        @UniqueConstraint(columnNames = {"tournament_id", "user_id"}),
         @UniqueConstraint(columnNames = {"tournament_id", "team_id"})
 })
 @EntityListeners(AuditingEntityListener.class)
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Registration extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -21,8 +26,8 @@ public class Registration extends BaseEntity {
     private Tournament tournament;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "player_id")
-    private Player player;
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id")
@@ -42,31 +47,45 @@ public class Registration extends BaseEntity {
     @Column(name = "registered_at", updatable = false)
     private LocalDateTime registeredAt;
 
+    // ════════════════════════════════════════════════════════════
+    //  VALIDACIONES DE CICLO DE VIDA (JPA Callbacks)
+    // ════════════════════════════════════════════════════════════
+
     @PrePersist
     @PreUpdate
     private void validateParticipant() {
-        boolean hasPlayer = player != null;
-        boolean hasTeam   = team   != null;
-        if (hasPlayer == hasTeam) {
+        boolean hasUser = user != null;
+        boolean hasTeam = team != null;
+
+        // Operación lógica XOR: Debe haber estrictamente UNO de los dos
+        if (hasUser == hasTeam) {
             throw new IllegalStateException(
-                    "Registration debe tener exactamente un participante: player XOR team");
+                    "Error de integridad: La inscripción debe tener exactamente un participante (user XOR team)");
         }
     }
 
-    public boolean isPlayerRegistration() { return player != null; }
+    public boolean isUserRegistration() {
+        return user != null;
+    }
+
+    public boolean isTeamRegistration() {
+        return team != null;
+    }
 
     public String getParticipantName() {
-        return isPlayerRegistration() ? player.getUsername() : team.getName();
+        return isUserRegistration() ? user.getUsername() : team.getName();
     }
 
     public Long getParticipantId() {
-        return isPlayerRegistration() ? player.getId() : team.getId();
+        return isUserRegistration() ? user.getId() : team.getId();
     }
 
     public int getParticipantElo() {
-        if (isPlayerRegistration()) return player.getEloRating();
+        if (isUserRegistration()) {
+            return user.getEloRating() != null ? user.getEloRating() : 1000;
+        }
         return (int) team.getMembers().stream()
-                .mapToInt(m -> m.getPlayer().getEloRating())
+                .mapToInt(m -> m.getUser().getEloRating() != null ? m.getUser().getEloRating() : 1000)
                 .average().orElse(1000);
     }
 }
