@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping({"/tournaments", "/api/tournaments"})
+@RequestMapping({"/tournaments", "/api/v1/tournaments"})
 @RequiredArgsConstructor
 public class TournamentController {
 
