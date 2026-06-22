@@ -49,10 +49,6 @@ public class Match extends BaseEntity {
     @Column(name = "scheduled_at")
     private LocalDateTime scheduledAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "winner_registration_id")
-    private Registration winner;
-
     public boolean isBye() {
         return registration1 == null || registration2 == null;
     }

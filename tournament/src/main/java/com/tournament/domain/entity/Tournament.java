@@ -56,10 +56,9 @@ public class Tournament extends BaseEntity {
     @Column(name = "max_participants", nullable = false)
     private Integer maxParticipants;
 
-    @NotNull
     @Column(name = "is_team_based", nullable = false)
     @Builder.Default
-    private Boolean isTeamBased = false;
+    private Boolean teamBased = false;
 
     @Min(0)
     @Column(name = "min_elo")
@@ -71,7 +70,7 @@ public class Tournament extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organizer_id")
-    private User organizerId;
+    private User organizer;
 
     @Column(name = "registration_start_at")
     private LocalDateTime registrationStartAt;

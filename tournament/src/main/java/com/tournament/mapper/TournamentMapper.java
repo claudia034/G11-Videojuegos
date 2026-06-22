@@ -29,10 +29,9 @@ public class TournamentMapper {
                 .format(request.format() != null ? request.format() : TournamentFormat.SINGLE_ELIMINATION)
                 .status(request.status() != null ? request.status() : TournamentStatus.DRAFT)
                 .maxParticipants(request.maxParticipants())
-                .isTeamBased(request.isTeamBased() != null ? request.isTeamBased() : false)
+                .teamBased(request.teamBased() != null ? request.teamBased() : false)
                 .minElo(request.minElo())
                 .maxElo(request.maxElo())
-                .organizerId(request.organizerId())
                 .registrationStartAt(request.registrationStartAt())
                 .registrationEndAt(request.registrationEndAt())
                 .startAt(request.startAt())
@@ -73,10 +72,10 @@ public class TournamentMapper {
                 tournament.getFormat(),
                 tournament.getStatus(),
                 tournament.getMaxParticipants(),
-                tournament.getIsTeamBased(),
+                tournament.getTeamBased(),
                 tournament.getMinElo(),
                 tournament.getMaxElo(),
-                tournament.getOrganizerId(),
+                tournament.getOrganizer() != null ? tournament.getOrganizer().getId() : null,
                 tournament.getRegistrationStartAt(),
                 tournament.getRegistrationEndAt(),
                 tournament.getStartAt(),
@@ -95,10 +94,9 @@ public class TournamentMapper {
         tournament.setFormat(request.format() != null ? request.format() : TournamentFormat.SINGLE_ELIMINATION);
         tournament.setStatus(request.status() != null ? request.status() : TournamentStatus.DRAFT);
         tournament.setMaxParticipants(request.maxParticipants());
-        tournament.setIsTeamBased(request.isTeamBased() != null ? request.isTeamBased() : false);
+        tournament.setTeamBased(request.isTeamBased() != null ? request.isTeamBased() : false);
         tournament.setMinElo(request.minElo());
         tournament.setMaxElo(request.maxElo());
-        tournament.setOrganizerId(request.organizerId());
         tournament.setRegistrationStartAt(request.registrationStartAt());
         tournament.setRegistrationEndAt(request.registrationEndAt());
         tournament.setStartAt(request.startAt());

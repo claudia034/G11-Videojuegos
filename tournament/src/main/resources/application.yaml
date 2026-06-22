@@ -4,39 +4,27 @@ server:
 spring:
   application:
     name: tournament
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> develop
+
   datasource:
     url: jdbc:postgresql://localhost:5432/tournament
     username: postgres
-    password: 12345678
-<<<<<<< HEAD
+    password:
     driver-class-name: org.postgresql.Driver
-=======
->>>>>>> develop
+
+  fliway:
+    enabled: false
+
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
-<<<<<<< HEAD
+    open-in-view: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
-server:
-  port: 8081
-=======
-=======
-<<<<<<< HEAD
-=======
-  flyway:
-    enabled: true
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    open-in-view: false
->>>>>>> origin/feature/crear-entidades-torneo
->>>>>>> develop
->>>>>>> develop
+app:
+  jwt:
+    secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+    access-token-expiration-ms: 86400000
+    refresh-token-expiration-ms: 604800000

@@ -11,6 +11,10 @@ public class SignUpRequest {
     @Size(max = 150, message = "El email no puede superar 150 caracteres")
     private String email;
 
+    @NotBlank(message = "El gamertag es obligatorio")
+    @Size(min = 3, max = 30)
+    private String username;
+
     @NotBlank(message = "La contrasena es obligatoria")
     @Size(min = 8, max = 100, message = "La contrasena debe tener entre 8 y 100 caracteres")
     private String password;

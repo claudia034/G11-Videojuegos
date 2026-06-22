@@ -21,9 +21,9 @@ import com.tournament.exception.*;
 public class RegistrationService {
 
     private final RegistrationRepository registrationRepository;
-    private final TournamentRepository   tournamentRepository;
-    private final PlayerRepository       playerRepository;
-    private final TeamRepository         teamRepository;
+    private final TournamentRepository tournamentRepository;
+    private final PlayerRepository playerRepository;
+    private final TeamRepository teamRepository;
 
     @Transactional
     public RegistrationResponse register(Long tournamentId, RegisterRequest request) {
@@ -83,7 +83,7 @@ public class RegistrationService {
     }
 
     private Registration buildPlayerRegistration(Tournament tournament, Long playerId) {
-        if (tournament.isTeamBased()) {
+        if (Boolean.TRUE.equals(tournament.getTeamBased())) {
             throw new InvalidRegistrationTypeException(
                     "Este torneo es exclusivo por equipos; proporcione un teamId en lugar de un playerId");
         }
@@ -107,7 +107,7 @@ public class RegistrationService {
     }
 
     private Registration buildTeamRegistration(Tournament tournament, Long teamId) {
-        if (!tournament.isTeamBased()) {
+        if (Boolean.TRUE.equals(tournament.getTeamBased())) {
             throw new InvalidRegistrationTypeException(
                     "Este torneo es individual; proporcione un playerId en lugar de un teamId");
         }

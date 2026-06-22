@@ -1,16 +1,16 @@
 package com.tournament.service.impl;
 
+import com.tournament.application.format.FormatFactory;
 import com.tournament.domain.entity.Tournament;
 import com.tournament.domain.entity.TournamentPrize;
 import com.tournament.domain.entity.TournamentRound;
 import com.tournament.domain.enums.TournamentStatus;
+import com.tournament.domain.repository.TournamentRepository;
 import com.tournament.dto.CreateTournamentRequest;
 import com.tournament.dto.TournamentResponse;
 import com.tournament.dto.UpdateTournamentRequest;
 import com.tournament.exception.ResourceNotFoundException;
-import com.tournament.factory.FormatFactory;
 import com.tournament.mapper.TournamentMapper;
-import com.tournament.repository.TournamentRepository;
 import com.tournament.service.TournamentService;
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -37,6 +37,7 @@ public class TournamentServiceImpl implements TournamentService {
     @Transactional
     public TournamentResponse create(CreateTournamentRequest request) {
         Tournament tournament = tournamentMapper.toEntity(request);
+
         generateRoundsWhenEmpty(tournament);
         validateTournament(tournament);
         Tournament saved = tournamentRepository.save(tournament);
@@ -101,7 +102,7 @@ public class TournamentServiceImpl implements TournamentService {
         validateRoundGenerationLimits(tournament);
         removeCurrentRounds(tournament);
 
-        formatFactory.getStrategy(tournament.getFormat())
+        formatFactory.getFormat(tournament.getFormat())
                 .generateRounds(tournament)
                 .forEach(tournament::addRound);
 
@@ -133,7 +134,7 @@ public class TournamentServiceImpl implements TournamentService {
 
     private void generateRoundsWhenEmpty(Tournament tournament) {
         if (tournament.getRounds().isEmpty()) {
-            formatFactory.getStrategy(tournament.getFormat())
+            formatFactory.getFormat(tournament.getFormat())
                     .generateRounds(tournament)
                     .forEach(tournament::addRound);
         }

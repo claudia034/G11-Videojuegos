@@ -24,7 +24,7 @@ public class TokenCleanupScheduler {
         try {
             LocalDateTime now = LocalDateTime.now();
 
-            refreshTokenRepository.deleteExpiredTokens(now);
+            refreshTokenRepository.deleteExpiredAndRevoked(LocalDateTime.now());
 
             log.info("[MANTENIMIENTO] Purga de refresh tokens finalizada con éxito.");
 

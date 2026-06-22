@@ -5,7 +5,9 @@ import com.tournament.application.dto.request.SignUpRequest;
 import com.tournament.application.dto.response.AuthResponse;
 import com.tournament.domain.entity.RefreshToken;
 import com.tournament.domain.entity.User;
+import com.tournament.domain.entity.Player;
 import com.tournament.domain.enums.UserRole;
+import com.tournament.domain.repository.PlayerRepository;
 import com.tournament.domain.repository.RefreshTokenRepository;
 import com.tournament.domain.repository.UserRepository;
 import com.tournament.exception.*;
@@ -34,6 +36,7 @@ public class AuthService {
     private final JwtService             jwtService;
     private final PasswordEncoder        passwordEncoder;
     private final AuthenticationManager  authenticationManager;
+    private final PlayerRepository playerRepository;
 
     @Value("${app.jwt.refresh-token-expiration-ms}")
     private long refreshTokenExpMs;
@@ -71,7 +74,7 @@ public class AuthService {
 
         if (savedUser.getRole() == UserRole.PLAYER) {
             Player newPlayer = Player.builder()
-                    .user(savedUser)
+                    .userId(savedUser.getId())
                     .username(request.getUsername())
                     .eloRating(1000)
                     .build();
@@ -161,7 +164,7 @@ public class AuthService {
                 .accessToken(accessToken)
                 .refreshToken(refreshTokenValue)
                 .tokenType("Bearer")
-                .expiresIn(jwtService.getAccessTokenExpMs() / 1000) // en segundos
+                .expiresIn(jwtService.getAccessTokenExpMs() / 1000)
                 .user(AuthResponse.UserInfo.from(user))
                 .build();
     }

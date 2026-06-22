@@ -9,6 +9,8 @@ import com.tournament.domain.entity.*;
 import com.tournament.domain.enums.*;
 import com.tournament.domain.repository.*;
 import com.tournament.exception.*;
+import com.tournament.application.format.FormatFactory;
+import com.tournament.application.format.TournamentFormatStrategy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -27,7 +29,7 @@ public class BracketService {
     private final MatchRepository        matchRepository;
     private final RegistrationRepository registrationRepository;
     private final TournamentRepository   tournamentRepository;
-    private final FormatFactory          formatFactory;
+    private final FormatFactory formatFactory;
     private final ApplicationEventPublisher eventPublisher;
 
     public BracketResponse generateBracket(Long tournamentId, GenerateBracketRequest req) {
@@ -35,7 +37,7 @@ public class BracketService {
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new TournamentNotFoundException(tournamentId));
 
-        if (tournament.getStatus() != TournamentStatus.PUBLISHED) {
+        if (tournament.getStatus() != TournamentStatus.REGISTRATION_CLOSED) {
             throw new TournamentNotPublishedException(tournamentId, tournament.getStatus());
         }
 
@@ -46,7 +48,7 @@ public class BracketService {
         List<Registration> confirmed = registrationRepository
                 .findByTournamentIdAndStatus(tournamentId, RegistrationStatus.CONFIRMED);
 
-        TournamentFormat format = formatFactory.getFormat(tournament.getFormat());
+        TournamentFormatStrategy format = formatFactory.getFormat(tournament.getFormat());
         if (confirmed.size() < format.getMinimumParticipants()) {
             throw new InsufficientParticipantsException(
                     confirmed.size(), format.getMinimumParticipants());

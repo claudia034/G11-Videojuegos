@@ -3,11 +3,35 @@ package com.tournament.application.format;
 import com.tournament.domain.entity.*;
 import com.tournament.domain.enums.MatchStatus;
 import com.tournament.domain.enums.RoundStatus;
+import com.tournament.domain.enums.TournamentFormat;
+import com.tournament.domain.enums.TournamentRoundStatus;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class SingleEliminationFormat implements TournamentFormat {
+public class SingleEliminationFormat implements TournamentFormatStrategy{
+
+    @Override
+    public TournamentFormat getFormat() {
+        return TournamentFormat.SINGLE_ELIMINATION;
+    }
+
+    @Override
+    public List<TournamentRound> generateRounds(Tournament tournament) {
+        int size = nextPowerOfTwo(tournament.getMaxParticipants());
+        int totalRounds = (int) (Math.log(size) / Math.log(2));
+
+        List<TournamentRound> rounds = new ArrayList<>();
+
+        for (int r = 1; r <= totalRounds; r++) {
+            rounds.add(TournamentRound.builder()
+                    .roundNumber(r)
+                    .name(getRoundName(totalRounds, r))
+                    .status(TournamentRoundStatus.PENDING)
+                    .build());
+        }
+        return rounds;
+    }
 
     @Override
     public int getMinimumParticipants() {
