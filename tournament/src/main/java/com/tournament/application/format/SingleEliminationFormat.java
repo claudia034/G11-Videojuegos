@@ -5,10 +5,12 @@ import com.tournament.domain.enums.MatchStatus;
 import com.tournament.domain.enums.RoundStatus;
 import com.tournament.domain.enums.TournamentFormat;
 import com.tournament.domain.enums.TournamentRoundStatus;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Component
 public class SingleEliminationFormat implements TournamentFormatStrategy{
 
     @Override
