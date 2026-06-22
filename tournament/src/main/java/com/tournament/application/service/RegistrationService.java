@@ -24,8 +24,8 @@ public class RegistrationService {
 
     private final RegistrationRepository registrationRepository;
     private final TournamentRepository   tournamentRepository;
-    private final UserRepository         userRepository;
-    private final TeamRepository         teamRepository;
+    private final PlayerRepository playerrRepository;
+    private final TeamRepository teamRepository;
 
     @Transactional
     public RegistrationResponse register(Long tournamentId, RegisterRequest request) {
@@ -84,25 +84,25 @@ public class RegistrationService {
                 .map(RegistrationResponse::from);
     }
 
-    private Registration buildUserRegistration(Tournament tournament, Long userId) {
+    private Registration buildPlayerRegistration(Tournament tournament, Long playerId) {
         if (tournament.isTeamBased()) {
             throw new InvalidRegistrationTypeException(
                     "Este torneo es exclusivo por equipos; proporcione un teamId en lugar de un userId");
         }
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
+        Player player = playerRepository.findById(playerId)
+                .orElseThrow(() -> new PlayerNotFoundException(playerId));
 
         if (registrationRepository.existsByTournamentIdAndUserId(tournament.getId(), userId)) {
-            throw new AlreadyRegisteredException(user.getUsername(), tournament.getId());
+            throw new AlreadyRegisteredException(player.getUsername(), tournament.getId());
         }
 
-        int elo = user.getEloRating() != null ? user.getEloRating() : 1000;
+        int elo = player.getEloRating() != null ? player.getEloRating() : 1000;
         validateEloRange(elo, tournament);
 
         return Registration.builder()
                 .tournament(tournament)
-                .user(user)
+                .player(player)
                 .eloAtRegistration(elo)
                 .status(RegistrationStatus.CONFIRMED)
                 .build();
@@ -122,7 +122,7 @@ public class RegistrationService {
         }
 
         int avgElo = (int) team.getMembers().stream()
-                .mapToInt(m -> m.getUser().getEloRating() != null ? m.getUser().getEloRating() : 1000)
+                .mapToInt(m -> m.getPlayer().getEloRating() != null ? m.getPlayer().getEloRating() : 1000)
                 .average().orElse(1000);
 
         validateEloRange(avgElo, tournament);
@@ -158,7 +158,7 @@ public class RegistrationService {
 
     private void validateOwnership(Registration reg, Long requestingUserId) {
         Long ownerId = reg.isUserRegistration()
-                ? reg.getUser().getId()
+                ? reg.getPlayer().getId()
                 : reg.getTeam().getCaptain().getId();
 
         if (!ownerId.equals(requestingUserId)) {

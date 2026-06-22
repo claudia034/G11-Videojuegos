@@ -26,8 +26,8 @@ public class Registration extends BaseEntity {
     private Tournament tournament;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @JoinColumn(name = "player_id")
+    private Player player;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id")
@@ -47,25 +47,20 @@ public class Registration extends BaseEntity {
     @Column(name = "registered_at", updatable = false)
     private LocalDateTime registeredAt;
 
-    // ════════════════════════════════════════════════════════════
-    //  VALIDACIONES DE CICLO DE VIDA (JPA Callbacks)
-    // ════════════════════════════════════════════════════════════
-
     @PrePersist
     @PreUpdate
     private void validateParticipant() {
         boolean hasUser = user != null;
         boolean hasTeam = team != null;
 
-        // Operación lógica XOR: Debe haber estrictamente UNO de los dos
-        if (hasUser == hasTeam) {
+        if (hasPlayer == hasTeam) {
             throw new IllegalStateException(
                     "Error de integridad: La inscripción debe tener exactamente un participante (user XOR team)");
         }
     }
 
     public boolean isUserRegistration() {
-        return user != null;
+        return player != null;
     }
 
     public boolean isTeamRegistration() {
@@ -73,19 +68,19 @@ public class Registration extends BaseEntity {
     }
 
     public String getParticipantName() {
-        return isUserRegistration() ? user.getUsername() : team.getName();
+        return isUserRegistration() ? player.getUsername() : team.getName();
     }
 
     public Long getParticipantId() {
-        return isUserRegistration() ? user.getId() : team.getId();
+        return isUserRegistration() ? player.getId() : team.getId();
     }
 
     public int getParticipantElo() {
         if (isUserRegistration()) {
-            return user.getEloRating() != null ? user.getEloRating() : 1000;
+            return player.getEloRating() != null ? player.getEloRating() : 1000;
         }
         return (int) team.getMembers().stream()
-                .mapToInt(m -> m.getUser().getEloRating() != null ? m.getUser().getEloRating() : 1000)
+                .mapToInt(m -> m.getPlayer().getEloRating() != null ? m.getUser().getEloRating() : 1000)
                 .average().orElse(1000);
     }
 }
