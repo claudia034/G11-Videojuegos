@@ -17,4 +17,18 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
             "WHERE m.round.bracket.tournament.id = :tid " +
             "ORDER BY m.round.roundNumber ASC, m.position ASC")
     List<Match> findAllByTournamentId(@Param("tid") Long tournamentId);
+    @Query("""
+            SELECT DISTINCT m FROM Match m
+            LEFT JOIN m.registration1 r1 LEFT JOIN r1.player p1 LEFT JOIN r1.team t1 LEFT JOIN t1.members tm1
+            LEFT JOIN m.registration2 r2 LEFT JOIN r2.player p2 LEFT JOIN r2.team t2 LEFT JOIN t2.members tm2
+            WHERE m.status = 'COMPLETED'
+            AND (p1.id = :playerId OR p2.id = :playerId OR tm1.player.id = :playerId OR tm2.player.id = :playerId)
+            AND (:gameName IS NULL OR m.round.bracket.tournament.gameName = :gameName)
+            AND (:tournamentName IS NULL OR m.round.bracket.tournament.name = :tournamentName)
+            """)
+    List<Match> findCompletedMatchesByPlayerAndFilters(
+            @Param("playerId") Long playerId, 
+            @Param("gameName") String gameName, 
+            @Param("tournamentName") String tournamentName
+    );
 }

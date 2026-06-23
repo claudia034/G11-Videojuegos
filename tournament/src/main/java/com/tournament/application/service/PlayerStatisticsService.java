@@ -6,7 +6,6 @@ import com.tournament.application.dto.response.PlayerRankingDto;
 import com.tournament.application.dto.response.PlayerStatsDto;
 import com.tournament.application.event.MatchCompletedEvent;
 import com.tournament.domain.entity.*;
-import com.tournament.domain.enums.MatchStatus;
 import com.tournament.domain.repository.MatchRepository;
 import com.tournament.domain.repository.MatchResultRepository;
 import com.tournament.domain.repository.PlayerRepository;
@@ -160,14 +159,11 @@ public class PlayerStatisticsService {
     }
 
     @Transactional(readOnly = true)
-    public PlayerHistoryDto getPlayerHistory(Long playerId) {
+    public PlayerHistoryDto getPlayerHistory(Long playerId, String gameName, String tournamentName) {
         Player player = playerRepository.findById(playerId)
                 .orElseThrow(() -> new PlayerNotFoundException(playerId));
 
-        List<Match> allCompleted = matchRepository.findAll().stream()
-                .filter(m -> m.getStatus() == MatchStatus.COMPLETED)
-                .filter(m -> isPlayerInMatch(m, playerId))
-                .toList();
+        List<Match> allCompleted = matchRepository.findCompletedMatchesByPlayerAndFilters(playerId, gameName, tournamentName);
 
         List<MatchHistoryItemDto> items = new ArrayList<>();
         for (Match m : allCompleted) {

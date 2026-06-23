@@ -30,7 +30,10 @@ public class PlayerStatisticsController {
     }
 
     @GetMapping("/{playerId}/history")
-    public ResponseEntity<PlayerHistoryDto> getPlayerHistory(@PathVariable Long playerId) {
-        return ResponseEntity.ok(playerStatisticsService.getPlayerHistory(playerId));
+    public ResponseEntity<PlayerHistoryDto> getPlayerHistory(
+            @PathVariable Long playerId,
+            @RequestParam(required = false) String gameName,
+            @RequestParam(required = false) String tournamentName) {
+        return ResponseEntity.ok(playerStatisticsService.getPlayerHistory(playerId, gameName, tournamentName));
     }
 }
