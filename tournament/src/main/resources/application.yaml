@@ -11,7 +11,7 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
-  fliway:
+  flyway:
     enabled: false
 
   jpa:
@@ -25,6 +25,6 @@ spring:
 
 app:
   jwt:
-    secret: {JWT_SECRET}
+    secret: ${JWT_SECRET}
     access-token-expiration-ms: 86400000
     refresh-token-expiration-ms: 604800000
