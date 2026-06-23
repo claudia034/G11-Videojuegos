@@ -28,6 +28,8 @@ public record CreateTournamentPrizeRequest(
         BigDecimal amount,
 
         @Size(min = 3, max = 3)
-        String currency
+        String currency,
+
+        Long playerId
 ) {
 }

@@ -76,4 +76,11 @@ public class TournamentPrize extends BaseEntity {
     @Size(min = 3, max = 3)
     @Column(name = "currency", length = 3)
     private String currency;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "player_id",
+            foreignKey = @ForeignKey(name = "fk_tournament_prizes_player")
+    )
+    private Player player;
 }
