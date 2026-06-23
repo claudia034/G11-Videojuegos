@@ -1,14 +1,18 @@
 package com.tournament.service.impl;
 
 import com.tournament.application.format.FormatFactory;
+import com.tournament.domain.entity.Player;
 import com.tournament.domain.entity.Tournament;
 import com.tournament.domain.entity.TournamentPrize;
 import com.tournament.domain.entity.TournamentRound;
 import com.tournament.domain.enums.TournamentStatus;
+import com.tournament.domain.repository.PlayerRepository;
 import com.tournament.domain.repository.TournamentRepository;
+import com.tournament.dto.CreateTournamentPrizeRequest;
 import com.tournament.dto.CreateTournamentRequest;
 import com.tournament.dto.TournamentResponse;
 import com.tournament.dto.UpdateTournamentRequest;
+import com.tournament.exception.PlayerNotFoundException;
 import com.tournament.exception.ResourceNotFoundException;
 import com.tournament.mapper.TournamentMapper;
 import com.tournament.service.TournamentService;
@@ -29,6 +33,7 @@ public class TournamentServiceImpl implements TournamentService {
     private static final int MAX_PARTICIPANTS_TO_GENERATE_ROUNDS = 256;
     private static final int MAX_ROUND_ROBIN_PARTICIPANTS = 64;
 
+    private final PlayerRepository playerRepository;
     private final TournamentRepository tournamentRepository;
     private final TournamentMapper tournamentMapper;
     private final FormatFactory formatFactory;
@@ -37,6 +42,7 @@ public class TournamentServiceImpl implements TournamentService {
     @Transactional
     public TournamentResponse create(CreateTournamentRequest request) {
         Tournament tournament = tournamentMapper.toEntity(request);
+        assignPrizePlayers(tournament.getPrizes(), request.prizes());
 
         generateRoundsWhenEmpty(tournament);
         validateTournament(tournament);
@@ -68,6 +74,7 @@ public class TournamentServiceImpl implements TournamentService {
 
         removeCurrentChildren(tournament);
         tournamentMapper.updateEntity(tournament, request);
+        assignPrizePlayers(tournament.getPrizes(), request.prizes());
         generateRoundsWhenEmpty(tournament);
         validateTournament(tournament);
 
@@ -238,6 +245,23 @@ public class TournamentServiceImpl implements TournamentService {
             if (!prizePositions.add(prize.getPosition())) {
                 throw new IllegalArgumentException("prize position must be unique per tournament");
             }
+        }
+    }
+
+    private void assignPrizePlayers(List<TournamentPrize> prizes, List<CreateTournamentPrizeRequest> prizeRequests) {
+        if (prizes == null || prizeRequests == null || prizes.size() != prizeRequests.size()) {
+            return;
+        }
+
+        for (int i = 0; i < prizes.size(); i++) {
+            Long playerId = prizeRequests.get(i).playerId();
+            if (playerId == null) {
+                continue;
+            }
+
+            Player player = playerRepository.findById(playerId)
+                    .orElseThrow(() -> new PlayerNotFoundException(playerId));
+            prizes.get(i).setPlayer(player);
         }
     }
 }

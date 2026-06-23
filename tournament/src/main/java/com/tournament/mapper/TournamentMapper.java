@@ -157,7 +157,8 @@ public class TournamentMapper {
                 prize.getDescription(),
                 prize.getPrizeType(),
                 prize.getAmount(),
-                prize.getCurrency()
+                prize.getCurrency(),
+                prize.getPlayer() != null ? prize.getPlayer().getId() : null
         );
     }
 }
