@@ -30,7 +30,7 @@ public record CreateTournamentRequest(
         @Min(2)
         Integer maxParticipants,
 
-        Boolean teamBased,
+        Boolean isTeamBased,
 
         @Min(0)
         Integer minElo,

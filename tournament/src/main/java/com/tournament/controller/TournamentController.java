@@ -3,6 +3,7 @@ package com.tournament.controller;
 import com.tournament.dto.CreateTournamentRequest;
 import com.tournament.dto.TournamentResponse;
 import com.tournament.dto.UpdateTournamentRequest;
+import com.tournament.infrastructure.response.ApiResponse;
 import com.tournament.service.TournamentService;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -26,39 +27,43 @@ public class TournamentController {
     private final TournamentService tournamentService;
 
     @PostMapping
-    public ResponseEntity<TournamentResponse> create(@Valid @RequestBody CreateTournamentRequest request) {
+    public ResponseEntity<ApiResponse<TournamentResponse>> create(@Valid @RequestBody CreateTournamentRequest request) {
         TournamentResponse response = tournamentService.create(request);
         return ResponseEntity
                 .created(URI.create("/tournaments/" + response.id()))
-                .body(response);
+                .body(ApiResponse.created(response, "Torneo creado exitosamente"));
     }
 
     @GetMapping
-    public ResponseEntity<List<TournamentResponse>> findAll() {
-        return ResponseEntity.ok(tournamentService.findAll());
+    public ResponseEntity<ApiResponse<List<TournamentResponse>>> findAll() {
+        return ResponseEntity.ok(ApiResponse.success(tournamentService.findAll()));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TournamentResponse> findById(@PathVariable Long id) {
-        return ResponseEntity.ok(tournamentService.findById(id));
+    public ResponseEntity<ApiResponse<TournamentResponse>> findById(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(tournamentService.findById(id)));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<TournamentResponse> update(
+    public ResponseEntity<ApiResponse<TournamentResponse>> update(
             @PathVariable Long id,
             @Valid @RequestBody UpdateTournamentRequest request
     ) {
-        return ResponseEntity.ok(tournamentService.update(id, request));
+        return ResponseEntity.ok(
+                ApiResponse.success(tournamentService.update(id, request), "Torneo actualizado exitosamente")
+        );
     }
 
     @PostMapping("/{id}/publish")
-    public ResponseEntity<TournamentResponse> publish(@PathVariable Long id) {
-        return ResponseEntity.ok(tournamentService.publish(id));
+    public ResponseEntity<ApiResponse<TournamentResponse>> publish(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(tournamentService.publish(id), "Torneo publicado exitosamente"));
     }
 
     @PostMapping("/{id}/rounds")
-    public ResponseEntity<TournamentResponse> generateRounds(@PathVariable Long id) {
-        return ResponseEntity.ok(tournamentService.generateRounds(id));
+    public ResponseEntity<ApiResponse<TournamentResponse>> generateRounds(@PathVariable Long id) {
+        return ResponseEntity.ok(
+                ApiResponse.success(tournamentService.generateRounds(id), "Rondas generadas exitosamente")
+        );
     }
 
     @DeleteMapping("/{id}")

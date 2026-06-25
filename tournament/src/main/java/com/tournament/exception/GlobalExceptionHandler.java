@@ -38,7 +38,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             InvalidRegistrationTypeException.class,
             IllegalArgumentException.class})
-    public ResponseEntity<ApiResponse<Void>> handleInvalidType(InvalidRegistrationTypeException ex) {
+    public ResponseEntity<ApiResponse<Void>> handleInvalidType(RuntimeException ex) {
         log.warn("Petición incorrecta (400): {}", ex.getMessage());
         return ResponseEntity.badRequest()
                 .body(ApiResponse.error(400, ex.getMessage()));
@@ -50,7 +50,7 @@ public class GlobalExceptionHandler {
             UnauthorizedResultException.class,
             org.springframework.security.authorization.AuthorizationDeniedException.class
     })
-    public ResponseEntity<ApiResponse<Void>> handleForbidden(ForbiddenOperationException ex) {
+    public ResponseEntity<ApiResponse<Void>> handleForbidden(RuntimeException ex) {
         log.warn("Petición incorrecta (400): {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ApiResponse.error(403, ex.getMessage()));

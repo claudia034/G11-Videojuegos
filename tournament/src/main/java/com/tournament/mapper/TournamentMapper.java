@@ -29,7 +29,7 @@ public class TournamentMapper {
                 .format(request.format() != null ? request.format() : TournamentFormat.SINGLE_ELIMINATION)
                 .status(request.status() != null ? request.status() : TournamentStatus.DRAFT)
                 .maxParticipants(request.maxParticipants())
-                .teamBased(request.teamBased() != null ? request.teamBased() : false)
+                .teamBased(request.isTeamBased() != null ? request.isTeamBased() : false)
                 .minElo(request.minElo())
                 .maxElo(request.maxElo())
                 .registrationStartAt(request.registrationStartAt())
