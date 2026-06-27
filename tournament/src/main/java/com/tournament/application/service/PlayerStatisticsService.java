@@ -116,23 +116,7 @@ public class PlayerStatisticsService {
 
     @Transactional(readOnly = true)
     public Page<PlayerRankingDto> getGlobalRanking(Pageable pageable) {
-        return playerRepository.findAllByOrderByEloRatingDesc(pageable)
-                .map(player -> {
-                    PlayerStats stats = playerStatsRepository.findByPlayerId(player.getId()).orElse(null);
-
-                    int wins = stats != null ? stats.getWins() : 0;
-                    int losses = stats != null ? stats.getLosses() : 0;
-                    int tp = stats != null ? stats.getTournamentsPlayed() : 0;
-
-                    return PlayerRankingDto.builder()
-                            .playerId(player.getId())
-                            .username(player.getUsername())
-                            .eloRating(player.getEloRating())
-                            .wins(wins)
-                            .losses(losses)
-                            .tournamentsPlayed(tp)
-                            .build();
-                });
+        return playerRepository.findRankingProjection(pageable);
     }
 
     @Transactional(readOnly = true)
