@@ -37,7 +37,9 @@ public class BracketService {
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new TournamentNotFoundException(tournamentId));
 
-        if (tournament.getStatus() != TournamentStatus.REGISTRATION_CLOSED) {
+        // TODO: nunca se cierra el registro, siempre queda abierto
+        if (tournament.getStatus() != TournamentStatus.REGISTRATION_CLOSED &&
+            tournament.getStatus() != TournamentStatus.REGISTRATION_OPEN) {
             throw new TournamentNotPublishedException(tournamentId, tournament.getStatus());
         }
 
