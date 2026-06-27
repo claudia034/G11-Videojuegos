@@ -55,6 +55,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/players/ranking").permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/api/v1/tournaments/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/stripe/webhook").permitAll()
 
                         .anyRequest().authenticated()
                 )
