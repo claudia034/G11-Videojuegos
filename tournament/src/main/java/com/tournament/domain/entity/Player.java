@@ -17,4 +17,8 @@ public class Player extends BaseEntity {
     @Column(name = "elo_rating", nullable = false)
     @Builder.Default
     private int eloRating = 1000;
+
+    // Agrega esto a tu entidad Player
+    @OneToOne(mappedBy = "player", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private PlayerStats playerStats;
 }
