@@ -24,6 +24,10 @@ public class PlayerStats extends BaseEntity {
     @Builder.Default
     private int tournamentsPlayed = 0;
 
+    @Column(name = "virtual_points", nullable = false)
+    @Builder.Default
+    private int virtualPoints = 0;
+
     public void incrementWins() {
         this.wins++;
     }
@@ -34,5 +38,9 @@ public class PlayerStats extends BaseEntity {
 
     public void incrementTournamentsPlayed() {
         this.tournamentsPlayed++;
+    }
+
+    public void addVirtualPoints(int points) {
+        this.virtualPoints += points;
     }
 }

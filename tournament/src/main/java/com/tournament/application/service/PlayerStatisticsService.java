@@ -6,6 +6,7 @@ import com.tournament.application.dto.response.PlayerRankingDto;
 import com.tournament.application.dto.response.PlayerStatsDto;
 import com.tournament.application.event.MatchCompletedEvent;
 import com.tournament.domain.entity.*;
+import com.tournament.domain.enums.PrizeType;
 import com.tournament.domain.repository.MatchRepository;
 import com.tournament.domain.repository.MatchResultRepository;
 import com.tournament.domain.repository.PlayerRepository;
@@ -22,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -46,6 +48,28 @@ public class PlayerStatisticsService {
         Match match = matchRepository.findById(event.getMatchId()).orElse(null);
         if (match == null || match.getWinner() == null) {
             return;
+        }
+
+        // Entregar premios si es la Gran Final
+        if (match.getNextMatch() == null) {
+            Tournament tournament = match.getRound().getBracket().getTournament();
+            BigDecimal totalCashPrize = tournament.getPrizes().stream()
+                    .filter(p -> p.getPrizeType() == PrizeType.CASH && p.getAmount() != null)
+                    .map(TournamentPrize::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            if (totalCashPrize.compareTo(BigDecimal.ZERO) > 0) {
+                List<Player> winners = extractPlayers(match.getWinner());
+                int pointsPerPlayer = totalCashPrize.multiply(new BigDecimal(20)).intValue() / Math.max(1, winners.size());
+                
+                for (Player w : winners) {
+                    PlayerStats winnerStats = playerStatsRepository.findByPlayerId(w.getId())
+                            .orElseGet(() -> PlayerStats.builder().player(w).build());
+                    winnerStats.addVirtualPoints(pointsPerPlayer);
+                    playerStatsRepository.save(winnerStats);
+                    log.info("Jugador {} ganó la final! Recibe {} puntos virtuales.", w.getUsername(), pointsPerPlayer);
+                }
+            }
         }
 
         Registration registration1 = match.getRegistration1();
