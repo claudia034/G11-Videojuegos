@@ -90,6 +90,8 @@ public class NotificationService {
         if (match.getRegistration2() != null) userIds.addAll(extractUserIds(match.getRegistration2()));
 
         userIds.forEach(uid -> notifyUser(uid, title, msg));
+
+        notifyNextMatchParticipants(match);
     }
 
     @EventListener
@@ -116,6 +118,26 @@ public class NotificationService {
         return registration.getTeam().getMembers().stream()
                 .map(member -> member.getPlayer().getUserId())
                 .collect(Collectors.toList());
+    }
+
+    private void notifyNextMatchParticipants(Match completedMatch) {
+        if (completedMatch.getNextMatch() == null) {
+            return;
+        }
+
+        Match nextMatch = matchRepository.findById(completedMatch.getNextMatch().getId()).orElse(null);
+        if (nextMatch == null || nextMatch.getRegistration1() == null || nextMatch.getRegistration2() == null) {
+            return;
+        }
+
+        String tournamentName = nextMatch.getRound().getBracket().getTournament().getName();
+        String title = "Proximo partido listo";
+        String msg = "Tu siguiente enfrentamiento en " + tournamentName + " ya esta listo en el bracket.";
+
+        List<Long> userIds = new ArrayList<>();
+        userIds.addAll(extractUserIds(nextMatch.getRegistration1()));
+        userIds.addAll(extractUserIds(nextMatch.getRegistration2()));
+        userIds.stream().distinct().forEach(uid -> notifyUser(uid, title, msg));
     }
 
     @Transactional(readOnly = true)

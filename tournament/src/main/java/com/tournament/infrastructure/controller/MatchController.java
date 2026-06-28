@@ -1,6 +1,8 @@
 package com.tournament.infrastructure.controller;
 
+import com.tournament.application.dto.request.AdminMatchDecisionRequest;
 import com.tournament.application.dto.request.ResolveDisputeRequest;
+import com.tournament.application.dto.request.ScheduleMatchRequest;
 import com.tournament.application.dto.request.SubmitResultRequest;
 import com.tournament.application.dto.response.MatchDetailResponse;
 import com.tournament.application.service.MatchService;
@@ -23,6 +25,27 @@ public class MatchController {
     @GetMapping("/matches/{matchId}")
     public ResponseEntity<ApiResponse<MatchDetailResponse>> getMatch(@PathVariable Long matchId) {
         return ResponseEntity.ok(ApiResponse.success(matchService.getMatch(matchId)));
+    }
+
+    @PatchMapping("/matches/{matchId}/schedule")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZER')")
+    public ResponseEntity<ApiResponse<MatchDetailResponse>> scheduleMatch(
+            @PathVariable Long matchId,
+            @Valid @RequestBody ScheduleMatchRequest request) {
+        return ResponseEntity.ok(
+                ApiResponse.success(matchService.scheduleMatch(matchId, request), "Partido programado"));
+    }
+
+    @PostMapping("/matches/{matchId}/admin-decision")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<MatchDetailResponse>> decideMatchAsAdmin(
+            @PathVariable Long matchId,
+            @Valid @RequestBody AdminMatchDecisionRequest request,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        matchService.decideMatchAsAdmin(matchId, request, currentUser.getId()),
+                        "Resultado validado por administracion"));
     }
 
     @PostMapping("/matches/{matchId}/start")
@@ -57,11 +80,11 @@ public class MatchController {
     @PreAuthorize("hasAnyRole('PLAYER', 'ORGANIZER')")
     public ResponseEntity<ApiResponse<MatchDetailResponse>> disputeResult(
             @PathVariable Long matchId,
-            @RequestParam Long userId,
-            @RequestParam String reason) {
+            @RequestParam String reason,
+            @AuthenticationPrincipal User currentUser) {
 
         return ResponseEntity.ok(
-                ApiResponse.success(matchService.disputeResult(matchId, reason, userId), "Disputa registrada"));
+                ApiResponse.success(matchService.disputeResult(matchId, reason, currentUser.getId()), "Disputa registrada"));
     }
 
     @PutMapping("/disputes/{matchId}/resolve")
