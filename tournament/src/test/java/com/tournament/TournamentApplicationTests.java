@@ -123,5 +123,30 @@ class TournamentApplicationTests {
         assertThat(formatFactory.getFormat(TournamentFormat.SINGLE_ELIMINATION)).isNotNull();
         assertThat(formatFactory.getFormat(TournamentFormat.DOUBLE_ELIMINATION)).isNotNull();
         assertThat(formatFactory.getFormat(TournamentFormat.ROUND_ROBIN)).isNotNull();
+        assertThat(formatFactory.getFormat(TournamentFormat.ROUND_ROBIN_DOUBLE_LEG)).isNotNull();
+        assertThat(formatFactory.getAllFormats()).hasSizeGreaterThanOrEqualTo(30);
+    }
+
+    @Test
+    void rejectsTournamentUsingInactiveExtendedFormat() throws Exception {
+        String requestBody = """
+                {
+                  "name": "League Masters",
+                  "description": "Extended format coverage",
+                  "gameName": "League of Legends",
+                  "format": "ROUND_ROBIN_DOUBLE_LEG",
+                  "maxParticipants": 10,
+                  "isTeamBased": false,
+                  "minElo": 1200,
+                  "maxElo": 2600
+                }
+                """;
+
+        mockMvc.perform(post("/api/v1/tournaments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message").value("Solo se permiten los formatos: eliminacion simple, doble eliminacion, round robin y swiss"));
     }
 }
