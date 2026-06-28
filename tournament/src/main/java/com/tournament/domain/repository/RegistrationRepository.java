@@ -21,4 +21,6 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     int countByTournamentIdAndStatusNot(Long tournamentId, RegistrationStatus status);
 
     Page<Registration> findByTournamentId(Long tournamentId, Pageable pageable);
+
+    List<Registration> findByPlayerUserIdOrderByRegisteredAtDesc(Long userId);
 }

@@ -43,6 +43,15 @@ public class RegistrationController {
                 ApiResponse.success(registrationService.getParticipants(tournamentId, pageable)));
     }
 
+    @GetMapping("/registrations/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<java.util.List<RegistrationResponse>>> getCurrentUserRegistrations(
+            @AuthenticationPrincipal User currentUser) {
+
+        return ResponseEntity.ok(
+                ApiResponse.success(registrationService.getCurrentUserRegistrations(currentUser.getId())));
+    }
+
     @DeleteMapping("/registrations/{registrationId}")
     @PreAuthorize("hasAnyRole('PLAYER', 'ORGANIZER', 'ADMIN')")
     public ResponseEntity<ApiResponse<RegistrationResponse>> withdraw(
