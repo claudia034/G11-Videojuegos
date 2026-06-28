@@ -111,7 +111,7 @@ public class SecurityConfig {
 
         config.setAllowedOriginPatterns(List.of(
                 "http://localhost:5173",
-                "https://g11-videojuegosfr-rsrs.vercel.app/"));
+                "https://g11-nexustorneos.vercel.app"));
 
         config.setAllowedMethods(
                 List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
