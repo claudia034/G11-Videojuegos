@@ -1,12 +1,18 @@
 package com.tournament.application.service;
 
+import com.tournament.application.dto.request.AdminMatchDecisionRequest;
 import com.tournament.application.dto.request.ResolveDisputeRequest;
+import com.tournament.application.dto.request.ScheduleMatchRequest;
 import com.tournament.application.dto.request.SubmitResultRequest;
 import com.tournament.application.dto.response.MatchDetailResponse;
 import com.tournament.application.event.MatchCompletedEvent;
+import com.tournament.application.format.FormatFactory;
+import com.tournament.application.format.TournamentFormatProfile;
+import com.tournament.application.format.TournamentFormatStrategy;
 import com.tournament.domain.entity.*;
 import com.tournament.domain.enums.MatchStatus;
 import com.tournament.domain.enums.RoundStatus;
+import com.tournament.domain.enums.TournamentFormatFamily;
 import com.tournament.domain.repository.*;
 import com.tournament.exception.*;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +21,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -27,12 +35,66 @@ public class MatchService {
     private final RegistrationRepository registrationRepository;
     private final RoundRepository        roundRepository;
     private final BracketRepository      bracketRepository;
+    private final TournamentRepository   tournamentRepository;
+    private final PlayerStatsRepository  playerStatsRepository;
+    private final FormatFactory          formatFactory;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public MatchDetailResponse getMatch(Long matchId) {
         Match match = findMatch(matchId);
         MatchResult result = matchResultRepository.findByMatchId(matchId).orElse(null);
+        return MatchDetailResponse.from(match, result);
+    }
+
+    public MatchDetailResponse scheduleMatch(Long matchId, ScheduleMatchRequest req) {
+        Match match = findMatch(matchId);
+
+        if (match.getStatus() == MatchStatus.COMPLETED || match.getStatus() == MatchStatus.BYE) {
+            throw new InvalidMatchStateException("No se puede programar un partido completado o BYE");
+        }
+
+        match.setScheduledAt(req.getScheduledAt());
+        matchRepository.save(match);
+
+        MatchResult result = matchResultRepository.findByMatchId(matchId).orElse(null);
+        return MatchDetailResponse.from(match, result);
+    }
+
+    public MatchDetailResponse decideMatchAsAdmin(Long matchId, AdminMatchDecisionRequest req, Long adminUserId) {
+        Match match = findMatch(matchId);
+
+        if (match.getStatus() == MatchStatus.COMPLETED || match.getStatus() == MatchStatus.BYE) {
+            throw new InvalidMatchStateException("No se puede decidir administrativamente un partido completado o BYE");
+        }
+
+        Registration winner = registrationRepository.findById(req.getWinnerId())
+                .orElseThrow(() -> new RegistrationNotFoundException(req.getWinnerId()));
+
+        if (!isParticipant(match, winner)) {
+            throw new InvalidMatchStateException("El ganador debe ser uno de los participantes del partido");
+        }
+
+        MatchResult existingResult = matchResultRepository.findByMatchId(matchId).orElse(null);
+        MatchResult result = MatchAdminSupport.buildOrUpdateAdministrativeResult(
+                match,
+                existingResult,
+                winner,
+                req,
+                adminUserId
+        );
+        matchResultRepository.save(result);
+
+        match.setWinner(winner);
+        match.setStatus(MatchStatus.COMPLETED);
+        if (match.getScheduledAt() == null) {
+            match.setScheduledAt(LocalDateTime.now());
+        }
+        matchRepository.save(match);
+
+        advanceBracket(match, winner);
+        eventPublisher.publishEvent(new MatchCompletedEvent(this, match.getId()));
+
         return MatchDetailResponse.from(match, result);
     }
 
@@ -98,9 +160,12 @@ public class MatchService {
     public MatchDetailResponse disputeResult(Long matchId, String reason, Long userId) {
         Match match = findMatch(matchId);
 
-        if (match.getStatus() != MatchStatus.RESULT_SUBMITTED) {
+        boolean disputingSubmittedResult = match.getStatus() == MatchStatus.RESULT_SUBMITTED;
+        boolean disputingClosedFinal = match.getStatus() == MatchStatus.COMPLETED && match.getNextMatch() == null;
+
+        if (!disputingSubmittedResult && !disputingClosedFinal) {
             throw new InvalidMatchStateException(
-                "Solo se puede disputar un resultado en estado RESULT_SUBMITTED");
+                "Solo se puede disputar un resultado pendiente de confirmacion o una final ya cerrada");
         }
         validateParticipant(match, userId);
 
@@ -109,6 +174,10 @@ public class MatchService {
 
         if (result.getReportedByUserId().equals(userId)) {
             throw new InvalidMatchStateException("No puedes disputar un resultado que tú mismo reportaste");
+        }
+
+        if (disputingClosedFinal) {
+            reopenFinalForAdministrativeReview(match);
         }
 
         result.setDisputeReason(reason);
@@ -223,6 +292,11 @@ public class MatchService {
             } else {
                 nextMatch.setRegistration2(winner);
             }
+            if (nextMatch.getRegistration1() != null
+                    && nextMatch.getRegistration2() != null
+                    && nextMatch.getStatus() == MatchStatus.BYE) {
+                nextMatch.setStatus(MatchStatus.SCHEDULED);
+            }
             matchRepository.save(nextMatch);
         }
 
@@ -236,12 +310,151 @@ public class MatchService {
             round.setStatus(RoundStatus.COMPLETED);
             roundRepository.save(round);
 
-            // Si era el partido final (sin siguiente), el bracket está completo
-            if (completedMatch.getNextMatch() == null) {
-                Bracket bracket = round.getBracket();
+            Bracket bracket = round.getBracket();
+            TournamentFormatStrategy strategy = formatFactory.getFormat(bracket.getTournament().getFormat());
+            if (strategy.isComplete(bracket)) {
                 bracket.setComplete(true);
                 bracketRepository.save(bracket);
+                finalizeTournament(bracket.getTournament(), completedMatch);
             }
         }
+    }
+
+    private void finalizeTournament(Tournament tournament, Match finalMatch) {
+        tournament.setStatus(com.tournament.domain.enums.TournamentStatus.COMPLETED);
+        TournamentFormatProfile profile = formatFactory.getFormat(tournament.getFormat()).getProfile();
+        assignPrizes(tournament, finalMatch, profile);
+        tournamentRepository.save(tournament);
+    }
+
+    private void reopenFinalForAdministrativeReview(Match match) {
+        Tournament tournament = match.getRound().getBracket().getTournament();
+        match.getRound().getBracket().setComplete(false);
+
+        if (tournament.getStatus() == com.tournament.domain.enums.TournamentStatus.COMPLETED) {
+            tournament.setStatus(com.tournament.domain.enums.TournamentStatus.IN_PROGRESS);
+        }
+
+        for (TournamentPrize prize : tournament.getPrizes()) {
+            Player awardedPlayer = prize.getPlayer();
+            if (awardedPlayer != null && prize.getPrizeType() == com.tournament.domain.enums.PrizeType.POINTS) {
+                playerStatsRepository.findByPlayerId(awardedPlayer.getId()).ifPresent((stats) -> {
+                    int amount = prize.getAmount() != null ? prize.getAmount().intValue() : 0;
+                    stats.addVirtualPoints(-amount);
+                    playerStatsRepository.save(stats);
+                });
+            }
+            prize.setPlayer(null);
+        }
+
+        tournamentRepository.save(tournament);
+        bracketRepository.save(match.getRound().getBracket());
+    }
+
+    private void assignPrizes(Tournament tournament, Match finalMatch, TournamentFormatProfile profile) {
+        if (tournament.getPrizes().isEmpty()) {
+            return;
+        }
+
+        List<Registration> podium = resolvePodium(tournament, finalMatch, profile);
+        for (TournamentPrize prize : tournament.getPrizes()) {
+            int index = prize.getPosition() - 1;
+            if (index < 0 || index >= podium.size()) {
+                continue;
+            }
+
+            Player awardedPlayer = resolvePrizeOwner(podium.get(index));
+            prize.setPlayer(awardedPlayer);
+
+            if (awardedPlayer != null && prize.getPrizeType() == com.tournament.domain.enums.PrizeType.POINTS) {
+                PlayerStats stats = playerStatsRepository.findByPlayerId(awardedPlayer.getId())
+                        .orElseGet(() -> PlayerStats.builder().player(awardedPlayer).build());
+                int amount = prize.getAmount() != null ? prize.getAmount().intValue() : 0;
+                stats.addVirtualPoints(amount);
+                playerStatsRepository.save(stats);
+            }
+        }
+    }
+
+    private List<Registration> resolvePodium(Tournament tournament, Match finalMatch, TournamentFormatProfile profile) {
+        if (profile.family() == TournamentFormatFamily.ROUND_ROBIN
+                || profile.family() == TournamentFormatFamily.SWISS) {
+            return resolveStandingPodium(tournament);
+        }
+
+        List<Registration> podium = new ArrayList<>();
+
+        if (finalMatch.getWinner() != null) {
+            podium.add(finalMatch.getWinner());
+        }
+
+        Registration runnerUp = loserOf(finalMatch, finalMatch.getWinner());
+        if (runnerUp != null) {
+            podium.add(runnerUp);
+        }
+
+        List<Match> allMatches = matchRepository.findAllByTournamentId(tournament.getId());
+        allMatches.stream()
+                .filter(match -> match.getNextMatch() != null && Objects.equals(match.getNextMatch().getId(), finalMatch.getId()))
+                .map(match -> loserOf(match, match.getWinner()))
+                .filter(Objects::nonNull)
+                .forEach(podium::add);
+
+        return podium;
+    }
+
+    private List<Registration> resolveStandingPodium(Tournament tournament) {
+        List<Registration> registrations = registrationRepository
+                .findByTournamentIdAndStatus(tournament.getId(), com.tournament.domain.enums.RegistrationStatus.CONFIRMED);
+        List<Match> matches = matchRepository.findAllByTournamentId(tournament.getId());
+
+        java.util.Map<Long, Integer> winsByRegistration = new java.util.HashMap<>();
+        for (Registration registration : registrations) {
+            winsByRegistration.put(registration.getId(), 0);
+        }
+
+        for (Match match : matches) {
+            if (match.getWinner() != null) {
+                winsByRegistration.computeIfPresent(match.getWinner().getId(), (key, value) -> value + 1);
+            }
+        }
+
+        return registrations.stream()
+                .sorted((left, right) -> {
+                    int winCompare = Integer.compare(
+                            winsByRegistration.getOrDefault(right.getId(), 0),
+                            winsByRegistration.getOrDefault(left.getId(), 0)
+                    );
+                    if (winCompare != 0) {
+                        return winCompare;
+                    }
+                    return Integer.compare(
+                            left.getSeed() != null ? left.getSeed() : Integer.MAX_VALUE,
+                            right.getSeed() != null ? right.getSeed() : Integer.MAX_VALUE
+                    );
+                })
+                .toList();
+    }
+
+    private Registration loserOf(Match match, Registration winner) {
+        if (match.getRegistration1() == null || match.getRegistration2() == null || winner == null) {
+            return null;
+        }
+        return match.getRegistration1().getId().equals(winner.getId())
+                ? match.getRegistration2()
+                : match.getRegistration1();
+    }
+
+    private Player resolvePrizeOwner(Registration registration) {
+        if (registration == null) {
+            return null;
+        }
+        if (registration.isPlayerRegistration()) {
+            return registration.getPlayer();
+        }
+        if (registration.getTeam() == null || registration.getTeam().getCaptain() == null) {
+            return null;
+        }
+        return registration.getTeam().getCaptain();
     }
 }
