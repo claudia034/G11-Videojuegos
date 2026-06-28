@@ -63,10 +63,12 @@ public class AuthService {
                             "1 mayuscula, 1 minuscula, 1 numero y 1 caracter especial (@$!%*?&_#)");
         }
 
+        UserRole requestedRole = request.getRole() == null ? UserRole.PLAYER : request.getRole();
+
         User user = User.builder()
                 .email(email)
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
-                .role(UserRole.PLAYER)
+                .role(requestedRole)
                 .active(true)
                 .build();
 

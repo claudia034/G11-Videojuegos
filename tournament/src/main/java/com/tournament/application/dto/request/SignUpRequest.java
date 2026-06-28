@@ -1,5 +1,6 @@
 package com.tournament.application.dto.request;
 
+import com.tournament.domain.enums.UserRole;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
@@ -21,4 +22,6 @@ public class SignUpRequest {
 
     @NotBlank(message = "La confirmacion de contrasena es obligatoria")
     private String confirmPassword;
+
+    private UserRole role;
 }
