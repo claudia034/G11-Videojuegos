@@ -16,4 +16,5 @@ public class PlayerRankingDto {
     private int wins;
     private int losses;
     private int tournamentsPlayed;
+    private int virtualPoints;
 }

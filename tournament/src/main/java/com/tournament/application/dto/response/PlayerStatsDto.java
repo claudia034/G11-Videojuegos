@@ -16,5 +16,6 @@ public class PlayerStatsDto {
     private int wins;
     private int losses;
     private int tournamentsPlayed;
+    private int virtualPoints;
     private double winRate;
 }

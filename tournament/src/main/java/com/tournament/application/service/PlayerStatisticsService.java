@@ -155,6 +155,7 @@ public class PlayerStatisticsService {
                             .wins(wins)
                             .losses(losses)
                             .tournamentsPlayed(tp)
+                            .virtualPoints(stats != null ? stats.getVirtualPoints() : 0)
                             .build();
                 });
     }
@@ -178,8 +179,16 @@ public class PlayerStatisticsService {
                 .wins(wins)
                 .losses(losses)
                 .tournamentsPlayed(tp)
+                .virtualPoints(stats != null ? stats.getVirtualPoints() : 0)
                 .winRate(winRate)
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public PlayerStatsDto getCurrentPlayerStats(Long userId) {
+        Player player = playerRepository.findByUserId(userId)
+                .orElseThrow(() -> new PlayerNotFoundException(userId));
+        return getPlayerStats(player.getId());
     }
 
     @Transactional(readOnly = true)
