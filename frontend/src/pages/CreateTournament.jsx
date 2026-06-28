@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { tournamentService } from '../services/tournamentService'
 import { tournamentFormatService } from '../services/tournamentFormatService'
 import { storage } from '../services/api'
@@ -66,6 +67,7 @@ const createInitialForm = () => {
 }
 
 export default function CreateTournament() {
+  const navigate = useNavigate()
   const [form, setForm] = useState(createInitialForm())
   const [formats, setFormats] = useState([])
   const [message, setMessage] = useState('')
@@ -210,8 +212,7 @@ export default function CreateTournament() {
         }))
       })
 
-      setMessage(`Torneo creado: ${created.name}`)
-      setForm(createInitialForm())
+      navigate(`/tournaments/${created.id}`)
     } catch (err) {
       setError(err.message || 'No se pudo crear el torneo.')
     }
@@ -357,7 +358,7 @@ export default function CreateTournament() {
                     </label>
                   </div>
 
-                  <div className="mt-4 grid gap-4 md:grid-cols-[1fr_140px]">
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
                     <label className="grid gap-2 text-sm font-bold text-slate-300">
                       Descripcion
                       <input
@@ -379,7 +380,7 @@ export default function CreateTournament() {
                     </label>
                   </div>
 
-                  <div className="mt-4 grid gap-4 md:grid-cols-[180px_1fr]">
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
                     <label className="grid gap-2 text-sm font-bold text-slate-300">
                       Moneda / Codigo
                       <input
@@ -406,7 +407,7 @@ export default function CreateTournament() {
           </div>
         </section>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <label className="grid gap-2 text-sm font-bold text-slate-300">
             ELO minimo
             <input name="minElo" value={form.minElo} type="number" min="0" onChange={handle} className="rounded-md border border-[#2d1747] bg-black/25 p-3 text-white outline-none focus:border-[#b65cff]" />
@@ -415,6 +416,9 @@ export default function CreateTournament() {
             ELO maximo
             <input name="maxElo" value={form.maxElo} type="number" min="0" onChange={handle} className="rounded-md border border-[#2d1747] bg-black/25 p-3 text-white outline-none focus:border-[#b65cff]" />
           </label>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
           <label className="grid gap-2 text-sm font-bold text-slate-300">
             Inicio de registro
             <input name="registrationStartAt" value={form.registrationStartAt} type="datetime-local" onChange={handle} className="rounded-md border border-[#2d1747] bg-black/25 p-3 text-white outline-none focus:border-[#b65cff]" />

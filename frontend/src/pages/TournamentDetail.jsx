@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useParams } from 'react-router-dom'
 import { CalendarClock, ShieldCheck, Swords, Trophy, Users, Loader2 } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -880,8 +881,8 @@ export default function TournamentDetail() {
       </SectionBlock>
 
       {/* MODAL DE PAGO (STRIPE) */}
-      {showFundingModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+      {showFundingModal && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-xl border border-[#2d1747] bg-[#0b0413] p-6 shadow-2xl">
             <h3 className="text-xl font-black text-white">Fondeo de Premios Requerido</h3>
             <p className="mt-2 text-sm font-medium text-slate-400">
@@ -917,7 +918,8 @@ export default function TournamentDetail() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
