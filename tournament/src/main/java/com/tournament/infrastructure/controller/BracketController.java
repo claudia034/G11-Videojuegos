@@ -18,7 +18,7 @@ public class BracketController {
 
     private final BracketService bracketService;
 
-    @PostMapping("/tournaments/{tournamentId}/brackets/generate")
+    @PostMapping("/{tournamentId}/brackets/generate")
     @PreAuthorize("hasAnyRole('ORGANIZER', 'ADMIN')")
     public ResponseEntity<ApiResponse<BracketResponse>> generate(
             @PathVariable Long tournamentId,
@@ -30,7 +30,7 @@ public class BracketController {
                 .body(ApiResponse.success(response, "Bracket generado exitosamente"));
     }
 
-    @GetMapping("/tournaments/{tournamentId}/brackets")
+    @GetMapping("/{tournamentId}/brackets")
     public ResponseEntity<ApiResponse<BracketResponse>> getBracket(
             @PathVariable Long tournamentId) {
 
@@ -50,7 +50,7 @@ public class BracketController {
                         "Ronda programada exitosamente"));
     }
 
-    @GetMapping("/tournaments/{tournamentId}/brackets/view")
+    @GetMapping("/{tournamentId}/brackets/view")
     public ResponseEntity<ApiResponse<BracketViewDto>> getBracketView(@PathVariable Long tournamentId) {
         return ResponseEntity.ok(ApiResponse.success(bracketService.getBracketView(tournamentId)));
     }
