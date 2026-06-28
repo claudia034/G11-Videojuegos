@@ -14,6 +14,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
@@ -45,7 +47,7 @@ public class RegistrationController {
 
     @GetMapping("/registrations/me")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<java.util.List<RegistrationResponse>>> getCurrentUserRegistrations(
+    public ResponseEntity<ApiResponse<List<RegistrationResponse>>> getCurrentUserRegistrations(
             @AuthenticationPrincipal User currentUser) {
 
         return ResponseEntity.ok(

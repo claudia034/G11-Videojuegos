@@ -8,8 +8,11 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,18 +30,18 @@ public class ReportService {
     @Cacheable(value = "popularTournamentsByGame")
     public List<PopularTournamentByGameDto> getPopularTournamentsByGameReport() {
         return tournamentRepository.findTournamentPopularityRows().stream()
-                .collect(java.util.stream.Collectors.toMap(
+                .collect(Collectors.toMap(
                         PopularTournamentByGameDto::getGameName,
                         Function.identity(),
                         (current, candidate) -> candidate.getParticipantCount() > current.getParticipantCount()
                                 ? candidate
                                 : current,
-                        java.util.LinkedHashMap::new
+                        LinkedHashMap::new
                 ))
                 .values()
                 .stream()
-                .sorted(java.util.Comparator
-                        .comparing(PopularTournamentByGameDto::getParticipantCount, java.util.Comparator.reverseOrder())
+                .sorted(Comparator
+                        .comparing(PopularTournamentByGameDto::getParticipantCount, Comparator.reverseOrder())
                         .thenComparing(PopularTournamentByGameDto::getGameName))
                 .toList();
     }

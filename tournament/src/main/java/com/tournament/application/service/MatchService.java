@@ -10,9 +10,7 @@ import com.tournament.application.format.FormatFactory;
 import com.tournament.application.format.TournamentFormatProfile;
 import com.tournament.application.format.TournamentFormatStrategy;
 import com.tournament.domain.entity.*;
-import com.tournament.domain.enums.MatchStatus;
-import com.tournament.domain.enums.RoundStatus;
-import com.tournament.domain.enums.TournamentFormatFamily;
+import com.tournament.domain.enums.*;
 import com.tournament.domain.repository.*;
 import com.tournament.exception.*;
 import lombok.RequiredArgsConstructor;
@@ -321,7 +319,7 @@ public class MatchService {
     }
 
     private void finalizeTournament(Tournament tournament, Match finalMatch) {
-        tournament.setStatus(com.tournament.domain.enums.TournamentStatus.COMPLETED);
+        tournament.setStatus(TournamentStatus.COMPLETED);
         TournamentFormatProfile profile = formatFactory.getFormat(tournament.getFormat()).getProfile();
         assignPrizes(tournament, finalMatch, profile);
         tournamentRepository.save(tournament);
@@ -331,13 +329,13 @@ public class MatchService {
         Tournament tournament = match.getRound().getBracket().getTournament();
         match.getRound().getBracket().setComplete(false);
 
-        if (tournament.getStatus() == com.tournament.domain.enums.TournamentStatus.COMPLETED) {
-            tournament.setStatus(com.tournament.domain.enums.TournamentStatus.IN_PROGRESS);
+        if (tournament.getStatus() == TournamentStatus.COMPLETED) {
+            tournament.setStatus(TournamentStatus.IN_PROGRESS);
         }
 
         for (TournamentPrize prize : tournament.getPrizes()) {
             Player awardedPlayer = prize.getPlayer();
-            if (awardedPlayer != null && prize.getPrizeType() == com.tournament.domain.enums.PrizeType.POINTS) {
+            if (awardedPlayer != null && prize.getPrizeType() == PrizeType.POINTS) {
                 playerStatsRepository.findByPlayerId(awardedPlayer.getId()).ifPresent((stats) -> {
                     int amount = prize.getAmount() != null ? prize.getAmount().intValue() : 0;
                     stats.addVirtualPoints(-amount);
@@ -366,7 +364,7 @@ public class MatchService {
             Player awardedPlayer = resolvePrizeOwner(podium.get(index));
             prize.setPlayer(awardedPlayer);
 
-            if (awardedPlayer != null && prize.getPrizeType() == com.tournament.domain.enums.PrizeType.POINTS) {
+            if (awardedPlayer != null && prize.getPrizeType() == PrizeType.POINTS) {
                 PlayerStats stats = playerStatsRepository.findByPlayerId(awardedPlayer.getId())
                         .orElseGet(() -> PlayerStats.builder().player(awardedPlayer).build());
                 int amount = prize.getAmount() != null ? prize.getAmount().intValue() : 0;
@@ -405,7 +403,7 @@ public class MatchService {
 
     private List<Registration> resolveStandingPodium(Tournament tournament) {
         List<Registration> registrations = registrationRepository
-                .findByTournamentIdAndStatus(tournament.getId(), com.tournament.domain.enums.RegistrationStatus.CONFIRMED);
+                .findByTournamentIdAndStatus(tournament.getId(), RegistrationStatus.CONFIRMED);
         List<Match> matches = matchRepository.findAllByTournamentId(tournament.getId());
 
         java.util.Map<Long, Integer> winsByRegistration = new java.util.HashMap<>();

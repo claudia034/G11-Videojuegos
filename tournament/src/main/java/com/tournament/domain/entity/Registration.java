@@ -63,10 +63,6 @@ public class Registration extends BaseEntity {
         return player != null;
     }
 
-    public boolean isTeamRegistration() {
-        return team != null;
-    }
-
     public String getParticipantName() {
         return isPlayerRegistration() ? player.getUsername() : team.getName();
     }

@@ -4,6 +4,7 @@ import com.tournament.domain.entity.Bracket;
 import com.tournament.domain.entity.Registration;
 import com.tournament.domain.entity.Tournament;
 import com.tournament.domain.entity.TournamentRound;
+import com.tournament.domain.enums.RoundStatus;
 import com.tournament.domain.enums.TournamentFormatFamily;
 import com.tournament.domain.enums.TournamentRoundStatus;
 import org.springframework.stereotype.Component;
@@ -44,6 +45,6 @@ public class SwissEngine implements TournamentFormatEngine {
     @Override
     public boolean isComplete(Bracket bracket, TournamentFormatProfile profile) {
         return bracket.getRounds().stream()
-                .allMatch(round -> round.getStatus() == com.tournament.domain.enums.RoundStatus.COMPLETED);
+                .allMatch(round -> round.getStatus() == RoundStatus.COMPLETED);
     }
 }

@@ -1,5 +1,6 @@
 package com.tournament.application.format;
 
+import com.tournament.application.format.helper.MaxParticipantsHelper;
 import com.tournament.domain.entity.Bracket;
 import com.tournament.domain.entity.Registration;
 import com.tournament.domain.enums.TournamentFormat;
@@ -23,19 +24,6 @@ public interface TournamentFormatStrategy {
 
     default void validateTournamentConfiguration(Tournament tournament) {
         TournamentFormatProfile profile = getProfile();
-        Integer maxParticipants = tournament.getMaxParticipants();
-
-        if (maxParticipants == null || maxParticipants < profile.minimumParticipants()) {
-            throw new IllegalArgumentException(
-                    "El formato " + profile.displayName() + " requiere al menos "
-                            + profile.minimumParticipants() + " participantes");
-        }
-
-        if (profile.maximumParticipants() != null
-                && maxParticipants > profile.maximumParticipants()) {
-            throw new IllegalArgumentException(
-                    "El formato " + profile.displayName() + " soporta hasta "
-                            + profile.maximumParticipants() + " participantes");
-        }
+        MaxParticipantsHelper.participantConstraints(tournament, profile);
     }
 }

@@ -18,9 +18,12 @@ public class BracketResponse {
 
     public static BracketResponse from(Bracket b, List<RoundResponse> rounds) {
         return BracketResponse.builder()
-                .id(b.getId()).tournamentId(b.getTournament().getId())
-                .generationType(b.getGenerationType()).complete(b.isComplete())
-                .generatedAt(b.getGeneratedAt()).rounds(rounds).build();
+                .id(b.getId())
+                .tournamentId(b.getTournament().getId())
+                .generationType(b.getGenerationType())
+                .complete(b.isComplete())
+                .generatedAt(b.getGeneratedAt())
+                .rounds(rounds)
+                .build();
     }
-
 }

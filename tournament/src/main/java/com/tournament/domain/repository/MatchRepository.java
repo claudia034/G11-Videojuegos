@@ -14,8 +14,6 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
 
     List<Match> findByRoundIdOrderByPositionAsc(Long roundId);
 
-    List<Match> findByStatusOrderByUpdatedAtDesc(MatchStatus status);
-
     @Query("SELECT m FROM Match m " +
             "WHERE m.round.bracket.tournament.id = :tid " +
             "ORDER BY m.round.roundNumber ASC, m.position ASC")

@@ -51,14 +51,22 @@ public class MatchDetailResponse {
                 .position(m.getPosition())
                 .roundNumber(m.getRound().getRoundNumber())
                 .roundName(m.getRound().getName())
-                .participant1Name(m.getRegistration1() != null ? m.getRegistration1().getParticipantName() : "BYE")
-                .participant1RegistrationId(m.getRegistration1() != null ? m.getRegistration1().getId() : null)
-                .participant2Name(m.getRegistration2() != null ? m.getRegistration2().getParticipantName() : "BYE")
-                .participant2RegistrationId(m.getRegistration2() != null ? m.getRegistration2().getId() : null)
-                .winnerName(m.getWinner() != null ? m.getWinner().getParticipantName() : null)
-                .winnerRegistrationId(m.getWinner() != null ? m.getWinner().getId() : null)
-                .nextMatchId(m.getNextMatch() != null ? m.getNextMatch().getId() : null)
-                .loserNextMatchId(m.getLoserNextMatch() != null ? m.getLoserNextMatch().getId() : null)
+                .participant1Name(m.getRegistration1() != null
+                        ? m.getRegistration1().getParticipantName() : "BYE")
+                .participant1RegistrationId(m.getRegistration1() != null
+                        ? m.getRegistration1().getId() : null)
+                .participant2Name(m.getRegistration2() != null
+                        ? m.getRegistration2().getParticipantName() : "BYE")
+                .participant2RegistrationId(m.getRegistration2() != null
+                        ? m.getRegistration2().getId() : null)
+                .winnerName(m.getWinner() != null
+                        ? m.getWinner().getParticipantName() : null)
+                .winnerRegistrationId(m.getWinner() != null
+                        ? m.getWinner().getId() : null)
+                .nextMatchId(m.getNextMatch() != null
+                        ? m.getNextMatch().getId() : null)
+                .loserNextMatchId(m.getLoserNextMatch() != null
+                        ? m.getLoserNextMatch().getId() : null)
                 .status(m.getStatus())
                 .bestOf(m.getBestOf())
                 .scheduledAt(m.getScheduledAt());

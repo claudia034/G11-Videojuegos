@@ -20,8 +20,13 @@ public class RoundResponse {
 
     public static RoundResponse from(Round r, List<MatchResponse> matches) {
         return RoundResponse.builder()
-                .id(r.getId()).roundNumber(r.getRoundNumber()).name(r.getName())
-                .section(r.getSection()).status(r.getStatus())
-                .scheduledStart(r.getScheduledStart()).matches(matches).build();
+                .id(r.getId())
+                .roundNumber(r.getRoundNumber())
+                .name(r.getName())
+                .section(r.getSection())
+                .status(r.getStatus())
+                .scheduledStart(r.getScheduledStart())
+                .matches(matches)
+                .build();
     }
 }

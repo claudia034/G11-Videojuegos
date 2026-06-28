@@ -3,6 +3,7 @@ package com.tournament.exception;
 import com.tournament.infrastructure.response.ApiResponse;
 import org.springframework.http.*;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
@@ -48,10 +49,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             ForbiddenOperationException.class,
             UnauthorizedResultException.class,
-            org.springframework.security.authorization.AuthorizationDeniedException.class
+            AuthorizationDeniedException.class
     })
     public ResponseEntity<ApiResponse<Void>> handleForbidden(RuntimeException ex) {
-        log.warn("Petición incorrecta (400): {}", ex.getMessage());
+        log.warn("No autorizado (403): {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ApiResponse.error(403, ex.getMessage()));
     }
@@ -86,13 +87,13 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(409, ex.getMessage()));
     }
 
-    // Error 422 Unprocessable entity
+    // Error 422 Unprocessable Content
     @ExceptionHandler({
             EloRequirementNotMetException.class,
             InsufficientParticipantsException.class
     })
     public ResponseEntity<ApiResponse<Void>> handleUnprocessable(RuntimeException ex) {
-        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT)
                 .body(ApiResponse.error(422, ex.getMessage()));
     }
 

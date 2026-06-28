@@ -1,5 +1,9 @@
 package com.tournament.application.format;
 
+import com.tournament.domain.entity.Bracket;
+import com.tournament.domain.entity.Registration;
+import com.tournament.domain.entity.Tournament;
+import com.tournament.domain.entity.TournamentRound;
 import com.tournament.domain.enums.TournamentFormat;
 import com.tournament.domain.enums.TournamentFormatFamily;
 import org.springframework.stereotype.Component;
@@ -53,15 +57,12 @@ public class FormatFactory {
         }
 
         @Override
-        public java.util.List<com.tournament.domain.entity.TournamentRound> generateRounds(com.tournament.domain.entity.Tournament tournament) {
+        public List<TournamentRound> generateRounds(Tournament tournament) {
             return engine.generateRounds(tournament, profile);
         }
 
         @Override
-        public BracketResult generateBracket(
-                java.util.List<com.tournament.domain.entity.Registration> seeded,
-                com.tournament.domain.entity.Bracket bracket
-        ) {
+        public BracketResult generateBracket(List<Registration> seeded, Bracket bracket) {
             return engine.generateBracket(seeded, bracket, profile);
         }
 
@@ -71,12 +72,12 @@ public class FormatFactory {
         }
 
         @Override
-        public boolean isComplete(com.tournament.domain.entity.Bracket bracket) {
+        public boolean isComplete(Bracket bracket) {
             return engine.isComplete(bracket, profile);
         }
 
         @Override
-        public void validateTournamentConfiguration(com.tournament.domain.entity.Tournament tournament) {
+        public void validateTournamentConfiguration(Tournament tournament) {
             engine.validateTournamentConfiguration(tournament, profile);
         }
     }
