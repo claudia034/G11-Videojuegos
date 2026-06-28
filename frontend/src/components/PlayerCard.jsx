@@ -13,7 +13,6 @@ export default function PlayerCard({ player }){
       <div className="text-right">
         <div className="text-lg font-black text-[#38f8d4]">{player.rating}</div>
         <div className="text-[11px] font-bold uppercase text-slate-500">ELO</div>
-        <div className="mt-2 text-sm font-black text-[#ff9f1c]">{player.virtualPoints || 0} pts</div>
       </div>
     </div>
   )

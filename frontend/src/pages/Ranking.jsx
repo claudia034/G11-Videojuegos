@@ -20,7 +20,6 @@ export default function Ranking(){
               <div className="mt-2 text-2xl font-black">{p.name}</div>
               <div className="mt-1 text-sm font-medium text-slate-500">{p.wins}W - {p.losses}L</div>
               <div className="mt-3 text-3xl font-black text-[#38f8d4]">{p.rating}</div>
-              <div className="mt-2 text-sm font-black text-[#ff9f1c]">{p.virtualPoints || 0} puntos virtuales</div>
             </div>
           ))}
         </div>
