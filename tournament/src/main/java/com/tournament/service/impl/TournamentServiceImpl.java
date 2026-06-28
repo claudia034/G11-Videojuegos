@@ -1,13 +1,17 @@
 package com.tournament.service.impl;
 
 import com.tournament.application.format.FormatFactory;
+import com.tournament.application.format.TournamentFormatStrategy;
 import com.tournament.domain.entity.Player;
 import com.tournament.domain.entity.Tournament;
 import com.tournament.domain.entity.TournamentPrize;
 import com.tournament.domain.entity.TournamentRound;
+import com.tournament.domain.entity.User;
+import com.tournament.domain.enums.TournamentFormat;
 import com.tournament.domain.enums.TournamentStatus;
 import com.tournament.domain.repository.PlayerRepository;
 import com.tournament.domain.repository.TournamentRepository;
+import com.tournament.domain.repository.UserRepository;
 import com.tournament.dto.CreateTournamentPrizeRequest;
 import com.tournament.dto.CreateTournamentRequest;
 import com.tournament.dto.TournamentResponse;
@@ -17,6 +21,7 @@ import com.tournament.exception.ResourceNotFoundException;
 import com.tournament.mapper.TournamentMapper;
 import com.tournament.service.TournamentService;
 import java.time.LocalDateTime;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -29,12 +34,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class TournamentServiceImpl implements TournamentService {
 
     private static final int MIN_PARTICIPANTS_TO_PUBLISH = 2;
-    private static final int MIN_PARTICIPANTS_TO_GENERATE_ROUNDS = 2;
-    private static final int MAX_PARTICIPANTS_TO_GENERATE_ROUNDS = 256;
-    private static final int MAX_ROUND_ROBIN_PARTICIPANTS = 64;
+    private static final Set<TournamentFormat> ACTIVE_FORMATS = EnumSet.of(
+            TournamentFormat.SINGLE_ELIMINATION,
+            TournamentFormat.DOUBLE_ELIMINATION,
+            TournamentFormat.ROUND_ROBIN,
+            TournamentFormat.SWISS
+    );
 
     private final PlayerRepository playerRepository;
     private final TournamentRepository tournamentRepository;
+    private final UserRepository userRepository;
     private final TournamentMapper tournamentMapper;
     private final FormatFactory formatFactory;
 
@@ -42,6 +51,7 @@ public class TournamentServiceImpl implements TournamentService {
     @Transactional
     public TournamentResponse create(CreateTournamentRequest request) {
         Tournament tournament = tournamentMapper.toEntity(request);
+        assignOrganizer(tournament, request.organizerId());
         assignPrizePlayers(tournament.getPrizes(), request.prizes());
 
         generateRoundsWhenEmpty(tournament);
@@ -74,6 +84,7 @@ public class TournamentServiceImpl implements TournamentService {
 
         removeCurrentChildren(tournament);
         tournamentMapper.updateEntity(tournament, request);
+        assignOrganizer(tournament, request.organizerId());
         assignPrizePlayers(tournament.getPrizes(), request.prizes());
         generateRoundsWhenEmpty(tournament);
         validateTournament(tournament);
@@ -95,6 +106,21 @@ public class TournamentServiceImpl implements TournamentService {
         validateTournament(tournament);
 
         tournament.setStatus(TournamentStatus.REGISTRATION_OPEN);
+        Tournament saved = tournamentRepository.save(tournament);
+        return tournamentMapper.toResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public TournamentResponse closeRegistration(Long id) {
+        Tournament tournament = tournamentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Tournament not found with id " + id));
+
+        if (tournament.getStatus() != TournamentStatus.REGISTRATION_OPEN) {
+            throw new IllegalArgumentException("Only REGISTRATION_OPEN tournaments can close registration");
+        }
+
+        tournament.setStatus(TournamentStatus.REGISTRATION_CLOSED);
         Tournament saved = tournamentRepository.save(tournament);
         return tournamentMapper.toResponse(saved);
     }
@@ -141,8 +167,9 @@ public class TournamentServiceImpl implements TournamentService {
 
     private void generateRoundsWhenEmpty(Tournament tournament) {
         if (tournament.getRounds().isEmpty()) {
-            formatFactory.getFormat(tournament.getFormat())
-                    .generateRounds(tournament)
+            TournamentFormatStrategy formatStrategy = formatFactory.getFormat(tournament.getFormat());
+            formatStrategy.validateTournamentConfiguration(tournament);
+            formatStrategy.generateRounds(tournament)
                     .forEach(tournament::addRound);
         }
     }
@@ -155,19 +182,7 @@ public class TournamentServiceImpl implements TournamentService {
     }
 
     private void validateRoundGenerationLimits(Tournament tournament) {
-        Integer maxParticipants = tournament.getMaxParticipants();
-        if (maxParticipants == null || maxParticipants < MIN_PARTICIPANTS_TO_GENERATE_ROUNDS) {
-            throw new IllegalArgumentException("Tournament must allow at least 2 participants to generate rounds");
-        }
-
-        if (maxParticipants > MAX_PARTICIPANTS_TO_GENERATE_ROUNDS) {
-            throw new IllegalArgumentException("Tournament cannot generate rounds for more than 256 participants");
-        }
-
-        if (tournament.getFormat() == com.tournament.domain.enums.TournamentFormat.ROUND_ROBIN
-                && maxParticipants > MAX_ROUND_ROBIN_PARTICIPANTS) {
-            throw new IllegalArgumentException("ROUND_ROBIN cannot generate rounds for more than 64 participants");
-        }
+        formatFactory.getFormat(tournament.getFormat()).validateTournamentConfiguration(tournament);
     }
 
     private void validatePublishState(Tournament tournament) {
@@ -194,6 +209,7 @@ public class TournamentServiceImpl implements TournamentService {
     }
 
     private void validateTournament(Tournament tournament) {
+        validateSupportedFormat(tournament);
         validateDateRange(
                 tournament.getRegistrationStartAt(),
                 tournament.getRegistrationEndAt(),
@@ -208,11 +224,20 @@ public class TournamentServiceImpl implements TournamentService {
         }
 
         validateEloRange(tournament);
+        formatFactory.getFormat(tournament.getFormat()).validateTournamentConfiguration(tournament);
         validateUniqueRoundNumbers(tournament.getRounds());
         validateUniquePrizePositions(tournament.getPrizes());
 
         for (TournamentRound round : tournament.getRounds()) {
             validateDateRange(round.getStartAt(), round.getEndAt(), "round startAt must be before or equal to endAt");
+        }
+    }
+
+    private void validateSupportedFormat(Tournament tournament) {
+        if (!ACTIVE_FORMATS.contains(tournament.getFormat())) {
+            throw new IllegalArgumentException(
+                    "Solo se permiten los formatos: eliminacion simple, doble eliminacion, round robin y swiss"
+            );
         }
     }
 
@@ -263,5 +288,15 @@ public class TournamentServiceImpl implements TournamentService {
                     .orElseThrow(() -> new PlayerNotFoundException(playerId));
             prizes.get(i).setPlayer(player);
         }
+    }
+
+    private void assignOrganizer(Tournament tournament, Long organizerId) {
+        if (organizerId == null) {
+            tournament.setOrganizer(null);
+            return;
+        }
+
+        User organizer = userRepository.findById(organizerId).orElse(null);
+        tournament.setOrganizer(organizer);
     }
 }

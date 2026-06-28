@@ -3,6 +3,8 @@ package com.tournament.mapper;
 import com.tournament.domain.entity.Tournament;
 import com.tournament.domain.entity.TournamentPrize;
 import com.tournament.domain.entity.TournamentRound;
+import com.tournament.domain.enums.RegistrationStatus;
+import com.tournament.application.format.TournamentFormatCatalog;
 import com.tournament.domain.enums.PrizeType;
 import com.tournament.domain.enums.TournamentFormat;
 import com.tournament.domain.enums.TournamentRoundStatus;
@@ -20,6 +22,12 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class TournamentMapper {
+
+    private final TournamentFormatCatalog tournamentFormatCatalog;
+
+    public TournamentMapper(TournamentFormatCatalog tournamentFormatCatalog) {
+        this.tournamentFormatCatalog = tournamentFormatCatalog;
+    }
 
     public Tournament toEntity(CreateTournamentRequest request) {
         Tournament tournament = Tournament.builder()
@@ -70,8 +78,12 @@ public class TournamentMapper {
                 tournament.getDescription(),
                 tournament.getGameName(),
                 tournament.getFormat(),
+                tournamentFormatCatalog.getProfile(tournament.getFormat()).displayName(),
                 tournament.getStatus(),
                 tournament.getMaxParticipants(),
+                (int) tournament.getRegistrations().stream()
+                        .filter(registration -> registration.getStatus() != RegistrationStatus.WITHDRAWN)
+                        .count(),
                 tournament.getTeamBased(),
                 tournament.getMinElo(),
                 tournament.getMaxElo(),
@@ -158,7 +170,8 @@ public class TournamentMapper {
                 prize.getPrizeType(),
                 prize.getAmount(),
                 prize.getCurrency(),
-                prize.getPlayer() != null ? prize.getPlayer().getId() : null
+                prize.getPlayer() != null ? prize.getPlayer().getId() : null,
+                prize.getPlayer() != null ? prize.getPlayer().getUsername() : null
         );
     }
 }
