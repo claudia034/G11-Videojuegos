@@ -22,4 +22,5 @@ public class BracketResponse {
                 .generationType(b.getGenerationType()).complete(b.isComplete())
                 .generatedAt(b.getGeneratedAt()).rounds(rounds).build();
     }
+
 }
