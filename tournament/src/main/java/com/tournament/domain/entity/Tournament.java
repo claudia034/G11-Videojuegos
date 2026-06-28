@@ -94,6 +94,10 @@ public class Tournament extends BaseEntity {
     @Builder.Default
     private List<TournamentPrize> prizes = new ArrayList<>();
 
+    @OneToMany(mappedBy = "tournament", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Registration> registrations = new ArrayList<>();
+
     public void addRound(TournamentRound round) {
         rounds.add(round);
         round.setTournament(this);

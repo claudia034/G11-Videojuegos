@@ -11,6 +11,7 @@ public record TournamentPrizeResponse(
         PrizeType prizeType,
         BigDecimal amount,
         String currency,
-        Long playerId
+        Long playerId,
+        String playerUsername
 ) {
 }

@@ -59,6 +59,13 @@ public class TournamentController {
         return ResponseEntity.ok(ApiResponse.success(tournamentService.publish(id), "Torneo publicado exitosamente"));
     }
 
+    @PostMapping("/{id}/close-registration")
+    public ResponseEntity<ApiResponse<TournamentResponse>> closeRegistration(@PathVariable Long id) {
+        return ResponseEntity.ok(
+                ApiResponse.success(tournamentService.closeRegistration(id), "Inscripciones cerradas exitosamente")
+        );
+    }
+
     @PostMapping("/{id}/rounds")
     public ResponseEntity<ApiResponse<TournamentResponse>> generateRounds(@PathVariable Long id) {
         return ResponseEntity.ok(

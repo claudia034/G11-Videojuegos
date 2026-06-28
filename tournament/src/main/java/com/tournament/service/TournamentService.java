@@ -17,6 +17,8 @@ public interface TournamentService {
 
     TournamentResponse publish(Long id);
 
+    TournamentResponse closeRegistration(Long id);
+
     TournamentResponse generateRounds(Long id);
 
     void deleteById(Long id);
