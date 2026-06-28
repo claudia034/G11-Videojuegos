@@ -55,6 +55,10 @@ public class BracketService {
                 .findByTournamentIdAndStatus(tournamentId, RegistrationStatus.CONFIRMED);
 
         TournamentFormatStrategy format = formatFactory.getFormat(tournament.getFormat());
+        if (!format.getProfile().supportsBracketGeneration()) {
+            throw new IllegalArgumentException(
+                    "El formato " + format.getProfile().displayName() + " aun no soporta generacion automatica de bracket");
+        }
         if (confirmed.size() < format.getMinimumParticipants()) {
             throw new InsufficientParticipantsException(
                     confirmed.size(), format.getMinimumParticipants());

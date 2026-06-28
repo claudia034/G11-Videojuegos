@@ -12,10 +12,30 @@ public interface TournamentFormatStrategy {
 
     TournamentFormat getFormat();
 
+    TournamentFormatProfile getProfile();
+
     List<TournamentRound> generateRounds(Tournament tournament);
 
     BracketResult generateBracket(List<Registration> seeded, Bracket bracket);
 
     int getMinimumParticipants();
     boolean isComplete(Bracket bracket);
+
+    default void validateTournamentConfiguration(Tournament tournament) {
+        TournamentFormatProfile profile = getProfile();
+        Integer maxParticipants = tournament.getMaxParticipants();
+
+        if (maxParticipants == null || maxParticipants < profile.minimumParticipants()) {
+            throw new IllegalArgumentException(
+                    "El formato " + profile.displayName() + " requiere al menos "
+                            + profile.minimumParticipants() + " participantes");
+        }
+
+        if (profile.maximumParticipants() != null
+                && maxParticipants > profile.maximumParticipants()) {
+            throw new IllegalArgumentException(
+                    "El formato " + profile.displayName() + " soporta hasta "
+                            + profile.maximumParticipants() + " participantes");
+        }
+    }
 }
