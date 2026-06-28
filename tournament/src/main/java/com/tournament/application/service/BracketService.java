@@ -11,10 +11,14 @@ import com.tournament.domain.repository.*;
 import com.tournament.exception.*;
 import com.tournament.application.format.FormatFactory;
 import com.tournament.application.format.TournamentFormatStrategy;
+import com.tournament.application.dto.response.BracketResponse;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -153,4 +157,44 @@ public class BracketService {
 
         return BracketResponse.from(bracket, roundResponses);
     }
+
+    @Transactional(readOnly = true)
+    public BracketViewDto getBracketView(Long tournamentId) {
+        Bracket bracket = bracketRepository.findByTournamentId(tournamentId)
+                .orElseThrow(() -> new BracketNotFoundException(tournamentId));
+
+        List<Round> rounds  = roundRepository.findByBracketIdOrderByRoundNumberAsc(bracket.getId());
+        List<Match> matches = matchRepository.findAllByTournamentId(tournamentId);
+
+        Map<Long, List<Match>> byRound = matches.stream()
+                .collect(Collectors.groupingBy(m -> m.getRound().getId()));
+
+        List<List<String>> leftData = rounds.stream()
+                .map(round -> byRound.getOrDefault(round.getId(), List.of()).stream()
+                        .map(m -> String.join(" vs ", matchToPlayerNames(m)))
+                        .toList())
+                .toList();
+
+        String championName = bracket.isComplete() ? "Campeón definido" : "En curso";
+
+        return BracketViewDto.builder()
+                .champion(championName)
+                .left(leftData)
+                .right(Collections.emptyList())
+                .build();
+    }
+
+    private List<String> matchToPlayerNames(Match m) {
+        List<String> names = new ArrayList<>();
+        if (m.getRegistration1() != null) names.add(participantName(m.getRegistration1()));
+        if (m.getRegistration2() != null) names.add(participantName(m.getRegistration2()));
+        if (names.isEmpty()) names.add("TBD");
+        return names;
+    }
+
+    private String participantName(Registration r) {
+        if (r == null) return "TBD";
+        return r.isPlayerRegistration() ? r.getPlayer().getUsername() : r.getTeam().getName();
+    }
+
 }

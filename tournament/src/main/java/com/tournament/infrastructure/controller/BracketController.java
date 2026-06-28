@@ -12,7 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v1/tournaments")
 @RequiredArgsConstructor
 public class BracketController {
 
@@ -48,5 +48,10 @@ public class BracketController {
                 ApiResponse.success(
                         bracketService.scheduleRound(roundId, request),
                         "Ronda programada exitosamente"));
+    }
+
+    @GetMapping("/tournaments/{tournamentId}/brackets/view")
+    public ResponseEntity<ApiResponse<BracketViewDto>> getBracketView(@PathVariable Long tournamentId) {
+        return ResponseEntity.ok(ApiResponse.success(bracketService.getBracketView(tournamentId)));
     }
 }
