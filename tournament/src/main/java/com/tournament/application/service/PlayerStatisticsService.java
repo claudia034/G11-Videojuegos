@@ -4,6 +4,7 @@ import com.tournament.application.dto.response.MatchHistoryItemDto;
 import com.tournament.application.dto.response.PlayerHistoryDto;
 import com.tournament.application.dto.response.PlayerRankingDto;
 import com.tournament.application.dto.response.PlayerStatsDto;
+import com.tournament.application.dto.response.PrivatePlayerStatsDto;
 import com.tournament.application.event.MatchCompletedEvent;
 import com.tournament.domain.entity.*;
 import com.tournament.domain.enums.PrizeType;
@@ -12,6 +13,7 @@ import com.tournament.domain.repository.MatchResultRepository;
 import com.tournament.domain.repository.PlayerRepository;
 import com.tournament.domain.repository.PlayerStatsRepository;
 import com.tournament.domain.repository.RegistrationRepository;
+import com.tournament.domain.repository.projection.PlayerStatsProjection;
 import com.tournament.domain.enums.RegistrationStatus;
 import com.tournament.application.event.TournamentStartedEvent;
 import com.tournament.exception.PlayerNotFoundException;
@@ -140,30 +142,55 @@ public class PlayerStatisticsService {
 
     @Transactional(readOnly = true)
     public Page<PlayerRankingDto> getGlobalRanking(Pageable pageable) {
-        return playerRepository.findRankingProjection(pageable);
+        return playerRepository.findGlobalRanking(pageable)
+                .map(proj -> PlayerRankingDto.builder()
+                        .playerId(proj.getPlayerId())
+                        .username(proj.getUsername())
+                        .eloRating(proj.getEloRating())
+                        .wins(proj.getWins())
+                        .losses(proj.getLosses())
+                        .tournamentsPlayed(proj.getTournamentsPlayed())
+                        .build());
     }
 
     @Transactional(readOnly = true)
     public PlayerStatsDto getPlayerStats(Long playerId) {
-        Player player = playerRepository.findById(playerId)
+        PlayerStatsProjection proj = playerRepository.findPlayerStatsProjectionById(playerId)
                 .orElseThrow(() -> new PlayerNotFoundException(playerId));
-        PlayerStats stats = playerStatsRepository.findByPlayerId(playerId).orElse(null);
         
-        int wins = stats != null ? stats.getWins() : 0;
-        int losses = stats != null ? stats.getLosses() : 0;
-        int tp = stats != null ? stats.getTournamentsPlayed() : 0;
-
-        double winRate = (wins + losses) > 0 ? (double) wins / (wins + losses) * 100.0 : 0.0;
-
         return PlayerStatsDto.builder()
-                .playerId(player.getId())
-                .username(player.getUsername())
-                .eloRating(player.getEloRating())
-                .wins(wins)
-                .losses(losses)
-                .tournamentsPlayed(tp)
-                .winRate(winRate)
+                .playerId(proj.getPlayerId())
+                .username(proj.getUsername())
+                .eloRating(proj.getEloRating())
+                .wins(proj.getWins())
+                .losses(proj.getLosses())
+                .tournamentsPlayed(proj.getTournamentsPlayed())
+                .winRate(calculateWinRate(proj.getWins(), proj.getLosses()))
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public PrivatePlayerStatsDto getCurrentPlayerStats(Long userId) {
+        Player player = playerRepository.findByUserId(userId)
+                .orElseThrow(() -> new PlayerNotFoundException(userId));
+        
+        PlayerStatsProjection proj = playerRepository.findPlayerStatsProjectionById(player.getId())
+                .orElseThrow(() -> new PlayerNotFoundException(player.getId()));
+        
+        return PrivatePlayerStatsDto.builder()
+                .playerId(proj.getPlayerId())
+                .username(proj.getUsername())
+                .eloRating(proj.getEloRating())
+                .wins(proj.getWins())
+                .losses(proj.getLosses())
+                .tournamentsPlayed(proj.getTournamentsPlayed())
+                .virtualPoints(proj.getVirtualPoints())
+                .winRate(calculateWinRate(proj.getWins(), proj.getLosses()))
+                .build();
+    }
+
+    private double calculateWinRate(int wins, int losses) {
+        return (wins + losses) > 0 ? (double) wins / (wins + losses) * 100.0 : 0.0;
     }
 
     @Transactional(readOnly = true)
