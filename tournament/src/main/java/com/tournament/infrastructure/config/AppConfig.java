@@ -14,6 +14,6 @@ public class AppConfig {
 
     @Bean
     public CacheManager cacheManager() {
-        return new ConcurrentMapCacheManager("popularGames");
+        return new ConcurrentMapCacheManager("popularGames", "popularTournamentsByGame");
     }
 }
