@@ -4,6 +4,7 @@ import com.tournament.domain.entity.*;
 import com.tournament.domain.enums.MatchStatus;
 import com.tournament.domain.enums.RoundStatus;
 import com.tournament.domain.enums.TournamentFormat;
+import com.tournament.domain.enums.TournamentFormatFamily;
 import com.tournament.domain.enums.TournamentRoundStatus;
 import org.springframework.stereotype.Component;
 
@@ -13,9 +14,30 @@ import java.util.List;
 @Component
 public class SingleEliminationFormat implements TournamentFormatStrategy{
 
+    private static final TournamentFormatProfile PROFILE = new TournamentFormatProfile(
+            TournamentFormat.SINGLE_ELIMINATION,
+            TournamentFormatFamily.SINGLE_ELIMINATION,
+            "Eliminacion simple",
+            "Cada derrota elimina al participante y el bracket avanza por rondas hasta la final.",
+            2,
+            256,
+            true,
+            true,
+            true,
+            true,
+            1,
+            1,
+            null
+    );
+
     @Override
     public TournamentFormat getFormat() {
         return TournamentFormat.SINGLE_ELIMINATION;
+    }
+
+    @Override
+    public TournamentFormatProfile getProfile() {
+        return PROFILE;
     }
 
     @Override
@@ -37,7 +59,7 @@ public class SingleEliminationFormat implements TournamentFormatStrategy{
 
     @Override
     public int getMinimumParticipants() {
-        return 2;
+        return PROFILE.minimumParticipants();
     }
 
     @Override
