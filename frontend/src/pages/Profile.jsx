@@ -1,35 +1,36 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { useParams } from 'react-router-dom'
-import { User } from 'lucide-react'
+import { User, Loader2 } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import { playerService } from '../services/playerService'
 import SectionBlock from '../components/SectionBlock'
 
 export default function Profile() {
   const { id } = useParams()
-  const [player, setPlayer] = useState(null)
-  const [history, setHistory] = useState([])
 
-  useEffect(() => {
-    const request = id === 'me'
-      ? playerService.getCurrent()
-      : playerService.getById(id)
+  const { data: player, isLoading: isLoadingPlayer } = useQuery({
+    queryKey: ['player', id],
+    queryFn: () => (id === 'me' ? playerService.getCurrent() : playerService.getById(id)),
+    retry: false
+  })
 
-    request
-      .then((value) => {
-        setPlayer(value)
-        return playerService.getHistory(value.id)
-      })
-      .then((payload) => setHistory(payload?.matches || []))
-      .catch(() => {
-        setPlayer(null)
-        setHistory([])
-      })
-  }, [id])
+  const { data: historyData, isLoading: isLoadingHistory } = useQuery({
+    queryKey: ['playerHistory', player?.id],
+    queryFn: () => playerService.getHistory(player.id),
+    enabled: !!player?.id
+  })
+
+  const history = historyData?.matches || []
+  const isLoading = isLoadingPlayer || isLoadingHistory
 
   return (
     <div className="space-y-4">
       <SectionBlock eyebrow="Perfil de usuario" title="Jugador" icon={User}>
-        {player ? (
+        {isLoading ? (
+          <div className="flex justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin text-[#b65cff]" />
+          </div>
+        ) : player ? (
           <div className="grid gap-4">
             <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
               <section className="card">

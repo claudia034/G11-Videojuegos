@@ -1,7 +1,10 @@
+import axios from 'axios'
+
 const API_BASE_URL = 'http://localhost:8081'
 
 export const storage = {
   getToken: () => localStorage.getItem('nexus-token'),
+  getRefreshToken: () => localStorage.getItem('nexus-refresh-token'),
   setSession: (session) => {
     localStorage.setItem('nexus-token', session.accessToken)
     localStorage.setItem('nexus-refresh-token', session.refreshToken)
@@ -29,62 +32,49 @@ export const storage = {
   }
 }
 
-async function request(path, options = {}) {
-  const headers = new Headers(options.headers || {})
-  headers.set('Content-Type', 'application/json')
-
-  const token = storage.getToken()
-  if (token && !headers.has('Authorization')) {
-    headers.set('Authorization', `Bearer ${token}`)
+const axiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json'
   }
+})
 
-  let response
+axiosInstance.interceptors.request.use(
+  (config) => {
+    const token = storage.getToken()
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => Promise.reject(error)
+)
 
-  try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
-      ...options,
-      headers
-    })
-  } catch (error) {
-    throw new Error('No se pudo conectar con el backend en http://localhost:8081. Verifica que el servidor esté levantado.')
+axiosInstance.interceptors.response.use(
+  (response) => {
+    // If backend wraps response in 'data' field (ApiResponse pattern)
+    if (response.data && response.data.hasOwnProperty('data')) {
+      return response.data.data
+    }
+    return response.data
+  },
+  (error) => {
+    if (error.response?.status === 401) {
+      // Logic for refresh token could go here.
+      // For now, clear session and force login if unauthorized
+      storage.clearSession()
+      window.location.href = '/login'
+    }
+    
+    const message = error.response?.data?.message || 'No se pudo completar la solicitud.'
+    return Promise.reject(new Error(message))
   }
-
-  if (response.status === 204) {
-    return null
-  }
-
-  const payload = await response.json().catch(() => null)
-  const data = payload && Object.prototype.hasOwnProperty.call(payload, 'data')
-    ? payload.data
-    : payload
-
-  if (!response.ok) {
-    const message = payload?.message || 'No se pudo completar la solicitud.'
-    throw new Error(message)
-  }
-
-  return data
-}
+)
 
 export const api = {
-  get: (path) => request(path),
-  post: (path, body) =>
-    request(path, {
-      method: 'POST',
-      body: JSON.stringify(body)
-    }),
-  put: (path, body) =>
-    request(path, {
-      method: 'PUT',
-      body: body == null ? undefined : JSON.stringify(body)
-    }),
-  patch: (path, body) =>
-    request(path, {
-      method: 'PATCH',
-      body: body == null ? undefined : JSON.stringify(body)
-    }),
-  delete: (path) =>
-    request(path, {
-      method: 'DELETE'
-    })
+  get: (path, config) => axiosInstance.get(path, config),
+  post: (path, body, config) => axiosInstance.post(path, body, config),
+  put: (path, body, config) => axiosInstance.put(path, body, config),
+  patch: (path, body, config) => axiosInstance.patch(path, body, config),
+  delete: (path, config) => axiosInstance.delete(path, config)
 }

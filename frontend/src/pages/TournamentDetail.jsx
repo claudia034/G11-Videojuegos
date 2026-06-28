@@ -1,12 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { CalendarClock, ShieldCheck, Swords, Trophy, Users } from 'lucide-react'
+import { CalendarClock, ShieldCheck, Swords, Trophy, Users, Loader2 } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import SectionBlock from '../components/SectionBlock'
 import BracketBoard from '../components/BracketBoard'
 import { tournamentService } from '../services/tournamentService'
 import { registrationService } from '../services/registrationService'
 import { playerService } from '../services/playerService'
 import { matchService } from '../services/matchService'
+import { stripeService } from '../services/stripeService'
 import { storage } from '../services/api'
 
 const formatDateTime = (value) => {
@@ -34,6 +36,7 @@ const toScheduleFields = (value) => {
 
 export default function TournamentDetail() {
   const { id } = useParams()
+  const queryClient = useQueryClient()
   const currentUser = storage.getUser()
   const role = currentUser?.role
   const isAdmin = role === 'ADMIN'
@@ -41,13 +44,16 @@ export default function TournamentDetail() {
   const isPlayer = role === 'PLAYER'
   const canManage = isAdmin || isOrganizer
 
-  const [tournament, setTournament] = useState(null)
-  const [participants, setParticipants] = useState([])
-  const [bracket, setBracket] = useState(null)
-  const [matches, setMatches] = useState([])
-  const [management, setManagement] = useState(null)
-  const [currentPlayer, setCurrentPlayer] = useState(null)
-  const [myRegistrations, setMyRegistrations] = useState([])
+  const { data: tournament, isLoading: loadingT } = useQuery({ queryKey: ['tournament', id], queryFn: () => tournamentService.getById(id) })
+  const { data: participants = [], isLoading: loadingP } = useQuery({ queryKey: ['tournamentParticipants', id], queryFn: () => tournamentService.getParticipants(id) })
+  const { data: bracket, isLoading: loadingB } = useQuery({ queryKey: ['bracket', id], queryFn: () => tournamentService.getBracket(id), retry: false })
+  const { data: matches = [], isLoading: loadingM } = useQuery({ queryKey: ['matches', id], queryFn: () => tournamentService.getMatches(id) })
+  const { data: management } = useQuery({ queryKey: ['management', id], queryFn: () => tournamentService.getManagement(id), enabled: canManage, retry: false })
+  const { data: currentPlayer } = useQuery({ queryKey: ['currentPlayer'], queryFn: () => playerService.getCurrent(), enabled: isPlayer, retry: false })
+  const { data: myRegistrations = [] } = useQuery({ queryKey: ['myRegistrations'], queryFn: () => registrationService.listMine(), enabled: !!currentUser, retry: false })
+
+  const loading = loadingT || loadingP || loadingB || loadingM
+
   const [scheduleInputs, setScheduleInputs] = useState({})
   const [matchScheduleInputs, setMatchScheduleInputs] = useState({})
   const [resultForms, setResultForms] = useState({})
@@ -56,87 +62,46 @@ export default function TournamentDetail() {
   const [adminDecisionForms, setAdminDecisionForms] = useState({})
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(true)
-
-  const loadTournament = async () => {
-    setLoading(true)
-    setError('')
-
-    try {
-      const baseRequests = [
-        tournamentService.getById(id),
-        tournamentService.getParticipants(id).catch(() => []),
-        tournamentService.getBracket(id).catch(() => null),
-        tournamentService.getMatches(id).catch(() => [])
-      ]
-
-      const managerRequest = canManage
-        ? tournamentService.getManagement(id).catch(() => null)
-        : Promise.resolve(null)
-
-      const playerRequest = isPlayer
-        ? playerService.getCurrent().catch(() => null)
-        : Promise.resolve(null)
-
-      const registrationRequest = currentUser
-        ? registrationService.listMine().catch(() => [])
-        : Promise.resolve([])
-
-      const [
-        tournamentData,
-        participantData,
-        bracketData,
-        matchData,
-        managementData,
-        playerData,
-        registrationData
-      ] = await Promise.all([
-        ...baseRequests,
-        managerRequest,
-        playerRequest,
-        registrationRequest
-      ])
-
-      setTournament(tournamentData)
-      setParticipants(participantData)
-      setBracket(bracketData)
-      setMatches(matchData)
-      setManagement(managementData)
-      setCurrentPlayer(playerData)
-      setMyRegistrations(registrationData)
-      setScheduleInputs(
-        Object.fromEntries((bracketData?.rounds || []).map((round) => [round.id, toScheduleFields(round.scheduledStart)]))
-      )
-      setMatchScheduleInputs(
-        Object.fromEntries((matchData || []).map((match) => [match.id, toScheduleFields(match.scheduledAt)]))
-      )
-    } catch (err) {
-      setError(err.message || 'No se pudo cargar el torneo.')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const [showFundingModal, setShowFundingModal] = useState(false)
+  const [fundingLoading, setFundingLoading] = useState(false)
 
   useEffect(() => {
-    loadTournament()
-  }, [id, canManage, isPlayer])
+    if (bracket) {
+      setScheduleInputs(Object.fromEntries((bracket.rounds || []).map((round) => [round.id, toScheduleFields(round.scheduledStart)])))
+    }
+  }, [bracket])
+
+  useEffect(() => {
+    if (matches.length > 0) {
+      setMatchScheduleInputs(Object.fromEntries(matches.map((match) => [match.id, toScheduleFields(match.scheduledAt)])))
+    }
+  }, [matches])
 
   const myRegistration = useMemo(
     () => myRegistrations.find((registration) => registration.tournamentId === Number(id)),
     [id, myRegistrations]
   )
 
-  const submitAction = async (action) => {
-    setMessage('')
-    setError('')
-
-    try {
-      await action()
+  const mutation = useMutation({
+    mutationFn: async (action) => await action(),
+    onSuccess: () => {
       setMessage('Operacion completada correctamente.')
-      await loadTournament()
-    } catch (err) {
+      queryClient.invalidateQueries({ queryKey: ['tournament', id] })
+      queryClient.invalidateQueries({ queryKey: ['tournamentParticipants', id] })
+      queryClient.invalidateQueries({ queryKey: ['bracket', id] })
+      queryClient.invalidateQueries({ queryKey: ['matches', id] })
+      queryClient.invalidateQueries({ queryKey: ['management', id] })
+      queryClient.invalidateQueries({ queryKey: ['myRegistrations'] })
+    },
+    onError: (err) => {
       setError(err.message || 'No se pudo completar la operacion.')
     }
+  })
+
+  const submitAction = (action) => {
+    setMessage('')
+    setError('')
+    mutation.mutate(action)
   }
 
   const handleRegister = () => {
@@ -334,7 +299,14 @@ export default function TournamentDetail() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => submitAction(() => tournamentService.publish(id))}
+                        onClick={() => {
+                          const requiresFunding = tournament.prizes?.some(p => p.prizeType === 'CASH' && p.amount > 0)
+                          if (requiresFunding) {
+                            setShowFundingModal(true)
+                          } else {
+                            submitAction(() => tournamentService.publish(id))
+                          }
+                        }}
                         disabled={tournament.status !== 'DRAFT'}
                         className="rounded-md border border-[#2d1747] px-4 py-3 text-sm font-black text-slate-300 hover:border-[#ff9f1c] hover:text-[#ffbf69] disabled:cursor-not-allowed disabled:opacity-50"
                       >
@@ -906,6 +878,47 @@ export default function TournamentDetail() {
           <div className="card text-sm font-medium text-slate-400">No se encontro informacion del torneo.</div>
         )}
       </SectionBlock>
+
+      {/* MODAL DE PAGO (STRIPE) */}
+      {showFundingModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl border border-[#2d1747] bg-[#0b0413] p-6 shadow-2xl">
+            <h3 className="text-xl font-black text-white">Fondeo de Premios Requerido</h3>
+            <p className="mt-2 text-sm font-medium text-slate-400">
+              Este torneo tiene configurados premios en efectivo (CASH). Debes fondear los premios a través de nuestra plataforma segura de pagos antes de poder publicar el torneo y abrir las inscripciones.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
+              <button
+                type="button"
+                disabled={fundingLoading}
+                onClick={() => setShowFundingModal(false)}
+                className="rounded-md px-4 py-2 text-sm font-bold text-slate-400 hover:text-white disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={fundingLoading}
+                onClick={async () => {
+                  setFundingLoading(true)
+                  try {
+                    const response = await stripeService.checkoutTournament(id)
+                    window.location.href = response.url
+                  } catch (err) {
+                    setError(err.message || 'No se pudo iniciar el pago.')
+                    setFundingLoading(false)
+                    setShowFundingModal(false)
+                  }
+                }}
+                className="inline-flex items-center gap-2 rounded-md bg-[#b65cff] px-4 py-2 text-sm font-black text-white hover:bg-[#a855f7] disabled:opacity-50"
+              >
+                {fundingLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Clic aquí para realizar el pago
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

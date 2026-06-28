@@ -1,28 +1,41 @@
 import React, { useEffect, useState } from 'react'
-import { Bell, Radio } from 'lucide-react'
+import { Bell, Radio, Loader2 } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import SectionBlock from '../components/SectionBlock'
 import { notificationService } from '../services/notificationService'
 
 export default function Notifications() {
-  const [notifications, setNotifications] = useState([])
+  const queryClient = useQueryClient()
   const [live, setLive] = useState(false)
 
-  useEffect(() => {
-    notificationService.listUnread().then(setNotifications).catch(() => setNotifications([]))
+  const { data: notifications = [], isLoading } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: () => notificationService.listUnread()
+  })
 
+  useEffect(() => {
     const stream = notificationService.stream()
     stream.onopen = () => setLive(true)
     stream.onerror = () => setLive(false)
     stream.addEventListener('notification', (event) => {
       try {
         const payload = JSON.parse(event.data)
-        setNotifications((current) => [
-          {
-            ...payload,
-            accent: payload.accent || 'text-[#38f8d4]'
-          },
-          ...current.filter((notification) => notification.id !== payload.id)
+        const newNotification = {
+          ...payload,
+          accent: payload.accent || 'text-[#38f8d4]'
+        }
+        
+        // Integración Total: Actualiza el caché local de notificaciones
+        queryClient.setQueryData(['notifications'], (old = []) => [
+          newNotification,
+          ...old.filter((notification) => notification.id !== payload.id)
         ])
+
+        // Refresca globalmente los torneos y brackets para los demás componentes
+        queryClient.invalidateQueries({ queryKey: ['bracket'] })
+        queryClient.invalidateQueries({ queryKey: ['matches'] })
+        queryClient.invalidateQueries({ queryKey: ['tournament'] })
+        queryClient.invalidateQueries({ queryKey: ['management'] })
       } catch {
         setLive(false)
       }
@@ -31,12 +44,16 @@ export default function Notifications() {
     return () => {
       stream.close()
     }
-  }, [])
+  }, [queryClient])
 
-  const markAsRead = async (id) => {
-    await notificationService.markAsRead(id)
-    setNotifications((current) => current.filter((notification) => notification.id !== id))
-  }
+  const markAsReadMutation = useMutation({
+    mutationFn: (id) => notificationService.markAsRead(id),
+    onSuccess: (_, id) => {
+      queryClient.setQueryData(['notifications'], (old = []) => 
+        old.filter((notification) => notification.id !== id)
+      )
+    }
+  })
 
   return (
     <div className="space-y-4">
@@ -51,7 +68,11 @@ export default function Notifications() {
           </div>
         }
       >
-        {notifications.length ? (
+        {isLoading ? (
+          <div className="flex justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin text-[#b65cff]" />
+          </div>
+        ) : notifications.length ? (
           <div className="grid gap-3">
             {notifications.map(({ id, title, message, accent, createdAt }) => (
               <article key={id} className="card flex items-start justify-between gap-4">
@@ -71,8 +92,9 @@ export default function Notifications() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => markAsRead(id)}
-                  className="rounded-md border border-[#2d1747] px-3 py-2 text-xs font-black uppercase text-slate-300 transition-colors hover:border-[#38f8d4] hover:text-[#38f8d4]"
+                  onClick={() => markAsReadMutation.mutate(id)}
+                  disabled={markAsReadMutation.isPending}
+                  className="rounded-md border border-[#2d1747] px-3 py-2 text-xs font-black uppercase text-slate-300 transition-colors hover:border-[#38f8d4] hover:text-[#38f8d4] disabled:opacity-50"
                 >
                   Marcar leida
                 </button>
