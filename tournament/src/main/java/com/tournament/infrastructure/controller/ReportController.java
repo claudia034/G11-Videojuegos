@@ -1,6 +1,7 @@
 package com.tournament.infrastructure.controller;
 
 import com.tournament.application.dto.response.PopularGameReportDto;
+import com.tournament.application.dto.response.PopularTournamentByGameDto;
 import com.tournament.application.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,5 +21,10 @@ public class ReportController {
     @GetMapping("/popular-games")
     public ResponseEntity<List<PopularGameReportDto>> getPopularGames() {
         return ResponseEntity.ok(reportService.getPopularGamesReport());
+    }
+
+    @GetMapping("/popular-tournaments-by-game")
+    public ResponseEntity<List<PopularTournamentByGameDto>> getPopularTournamentsByGame() {
+        return ResponseEntity.ok(reportService.getPopularTournamentsByGameReport());
     }
 }
