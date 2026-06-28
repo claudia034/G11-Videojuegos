@@ -31,7 +31,7 @@ const normalizeTournament = (tournament) => ({
   participants: tournament.maxParticipants,
   totalSlots: tournament.maxParticipants,
   currentParticipants: tournament.currentParticipants ?? tournament.participantCount ?? 0,
-  prize: (tournament.prizes || []).reduce((sum, prize) => sum + Number(prize.amount || 0), 0),
+  prize: tournament.totalPrizeValue || 0,
   status: tournament.status,
   statusLabel: statusLabelMap[tournament.status] || tournament.status,
   formatLabel: tournament.formatDisplayName || formatLabelMap[tournament.format] || tournament.format,
@@ -72,6 +72,10 @@ export const tournamentService = {
     api.patch(`/api/v1/rounds/${roundId}/schedule`, { scheduledStart }),
   create: async (payload) => {
     const tournament = await api.post('/api/v1/tournaments', payload)
+    return normalizeTournament(tournament)
+  },
+  update: async (id, payload) => {
+    const tournament = await api.put(`/api/v1/tournaments/${id}`, payload)
     return normalizeTournament(tournament)
   }
 }

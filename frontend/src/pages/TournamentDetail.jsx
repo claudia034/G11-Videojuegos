@@ -291,6 +291,14 @@ export default function TournamentDetail() {
 
                   {canManage && (
                     <>
+                      {tournament.status === 'DRAFT' && (
+                        <Link
+                          to={`/tournaments/${id}/edit`}
+                          className="rounded-md border border-[#2d1747] px-4 py-3 text-center text-sm font-black text-slate-300 hover:border-[#b65cff] hover:text-[#b65cff]"
+                        >
+                          Editar torneo
+                        </Link>
+                      )}
                       <button
                         type="button"
                         onClick={() => submitAction(() => tournamentService.generateRounds(id))}

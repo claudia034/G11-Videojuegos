@@ -16,6 +16,9 @@ import com.tournament.dto.TournamentPrizeResponse;
 import com.tournament.dto.TournamentResponse;
 import com.tournament.dto.TournamentRoundResponse;
 import com.tournament.dto.UpdateTournamentRequest;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Comparator;
 import java.util.List;
 import org.springframework.stereotype.Component;
@@ -72,6 +75,18 @@ public class TournamentMapper {
                 .map(this::toPrizeResponse)
                 .toList();
 
+        BigDecimal totalPrizeValue = tournament.getPrizes().stream()
+                .map(prize -> {
+                    if (prize.getAmount() == null) return BigDecimal.ZERO;
+                    if (prize.getPrizeType() == PrizeType.CASH) {
+                        return prize.getAmount();
+                    } else if (prize.getPrizeType() == PrizeType.POINTS) {
+                        return prize.getAmount().divide(new BigDecimal("20"), 2, RoundingMode.HALF_UP);
+                    }
+                    return BigDecimal.ZERO;
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         return new TournamentResponse(
                 tournament.getId(),
                 tournament.getName(),
@@ -94,6 +109,7 @@ public class TournamentMapper {
                 tournament.getEndAt(),
                 tournament.getCreatedAt(),
                 tournament.getUpdatedAt(),
+                totalPrizeValue,
                 rounds,
                 prizes
         );

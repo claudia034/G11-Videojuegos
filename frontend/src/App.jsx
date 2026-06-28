@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard'
 import Tournaments from './pages/Tournaments'
 import TournamentDetail from './pages/TournamentDetail'
 import CreateTournament from './pages/CreateTournament'
+import EditTournament from './pages/EditTournament'
 import TournamentPaymentSuccess from './pages/TournamentPaymentSuccess'
 import TournamentPaymentCancel from './pages/TournamentPaymentCancel'
 import Ranking from './pages/Ranking'
@@ -29,6 +30,7 @@ export default function App() {
       <Route path="/tournaments/:id" element={<MainLayout><TournamentDetail /></MainLayout>} />
       <Route path="/tournaments/:id/success" element={<MainLayout><TournamentPaymentSuccess /></MainLayout>} />
       <Route path="/tournaments/:id/cancel" element={<MainLayout><TournamentPaymentCancel /></MainLayout>} />
+      <Route path="/tournaments/:id/edit" element={<MainLayout><EditTournament /></MainLayout>} />
       <Route path="/tournaments/create" element={<MainLayout><CreateTournament /></MainLayout>} />
       <Route path="/ranking" element={<MainLayout><Ranking /></MainLayout>} />
       <Route path="/reports" element={<MainLayout><Reports /></MainLayout>} />

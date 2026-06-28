@@ -2,6 +2,8 @@ package com.tournament.dto;
 
 import com.tournament.domain.enums.TournamentFormat;
 import com.tournament.domain.enums.TournamentStatus;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -25,6 +27,7 @@ public record TournamentResponse(
         LocalDateTime endAt,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
+        BigDecimal totalPrizeValue,
         List<TournamentRoundResponse> rounds,
         List<TournamentPrizeResponse> prizes
 ) {
