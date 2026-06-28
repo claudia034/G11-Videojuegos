@@ -82,6 +82,13 @@ public class RegistrationService {
                 .map(RegistrationResponse::from);
     }
 
+    @Transactional(readOnly = true)
+    public java.util.List<RegistrationResponse> getCurrentUserRegistrations(Long userId) {
+        return registrationRepository.findByPlayerUserIdOrderByRegisteredAtDesc(userId).stream()
+                .map(RegistrationResponse::from)
+                .toList();
+    }
+
     private Registration buildPlayerRegistration(Tournament tournament, Long playerId) {
         if (Boolean.TRUE.equals(tournament.getTeamBased())) {
             throw new InvalidRegistrationTypeException(
@@ -107,7 +114,7 @@ public class RegistrationService {
     }
 
     private Registration buildTeamRegistration(Tournament tournament, Long teamId) {
-        if (Boolean.TRUE.equals(tournament.getTeamBased())) {
+        if (!Boolean.TRUE.equals(tournament.getTeamBased())) {
             throw new InvalidRegistrationTypeException(
                     "Este torneo es individual; proporcione un playerId en lugar de un teamId");
         }
